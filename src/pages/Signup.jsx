@@ -2,21 +2,35 @@
 
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
 import { useApp } from "../context/AppContext"
+import { registerNewUser } from "../service/authService"
 
 export default function Signup() {
   const navigate = useNavigate()
   const { login } = useApp()
   const [email, setEmail] = useState("")
-  const [fullName, setFullName] = useState("")
+  const [fullname, setFullName] = useState("")
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     // Mock signup - just log them in
-    login(username, password)
-    navigate("/home")
+
+    const data = await registerNewUser({ email, fullname, username, password })
+    console.log("Signup response:", data)
+    if(data.statusCode !== 201) {
+      if(data.message && !data.errors) {
+        toast.error(data.message || "Signup failed")
+        return
+      }
+      toast.error(data.errors[0].message || "Signup failed")
+      return
+    }
+    toast.success("Signup successful! Please verify your email.")
+    // login(username, password)
+    // navigate("/home")
   }
 
   return (
@@ -38,16 +52,24 @@ export default function Signup() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="email"
-              placeholder="Email"
+              placeholder="Mobile Number or Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-field"
               required
             />
             <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input-field"
+              required
+            />
+            <input
               type="text"
               placeholder="Full Name"
-              value={fullName}
+              value={fullname}
               onChange={(e) => setFullName(e.target.value)}
               className="input-field"
               required
@@ -57,14 +79,6 @@ export default function Signup() {
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="input-field"
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="input-field"
               required
             />
