@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { ToastContainer } from 'react-toastify';
 import { AppProvider, useApp } from "./context/AppContext"
 import Sidebar from "./components/Sidebar"
 import Navbar from "./components/Navbar"
@@ -10,6 +11,7 @@ import Notifications from "./pages/Notifications"
 import Profile from "./pages/Profile"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
+import VerifyEmail from "./pages/VerifyEmail"
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useApp()
@@ -31,6 +33,7 @@ function AppContent() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route
             path="/home"
             element={
@@ -79,9 +82,10 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/home" />} />
+          <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </main>
+      <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>
   )
 }
