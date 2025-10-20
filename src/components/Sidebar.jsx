@@ -70,6 +70,20 @@ export default function Sidebar() {
             />
             <span>Profile</span>
           </Link>
+
+          <Link
+            to={`/socketdemo`}
+            className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${
+              location.pathname.includes("/profile") ? "font-bold" : "hover:bg-gray-100 dark:hover:bg-gray-900"
+            }`}
+          >
+            <img
+              src={currentUser.avatar || "/placeholder.svg"}
+              alt={currentUser.username}
+              className="w-6 h-6 rounded-full object-cover"
+            />
+            <span>Socket Demo</span>
+          </Link>
         </nav>
 
         <div className="space-y-2 border-t border-gray-200 dark:border-gray-800 pt-4">

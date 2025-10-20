@@ -10,6 +10,7 @@ import Notifications from "./pages/Notifications"
 import Profile from "./pages/Profile"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
+import SocketDemo from "./pages/SoketDemo"
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useApp()
@@ -76,6 +77,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/socketdemo"
+            element={
+              <ProtectedRoute>
+                <SocketDemo />
               </ProtectedRoute>
             }
           />
