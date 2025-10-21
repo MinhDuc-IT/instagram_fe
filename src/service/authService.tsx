@@ -16,8 +16,12 @@ const registerNewUser = (userData: {
     return axios.post('/auth/register', userData);
 };
 
+const loginUser = (loginUserDTO: { credential: string; password: string }) => {
+    return axios.post('/auth/login', loginUserDTO);
+}
+
 const verifyEmail = (token: string) => {
     return axios.post('/auth/verify', { token });
 }
 
-export { registerNewUser, verifyEmail };
+export { registerNewUser, verifyEmail, loginUser };

@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useApp } from "../context/AppContext"
+import { loginUser } from "../service/authService"
+import { toast } from "react-toastify"
 
 export default function Login() {
   const navigate = useNavigate()
@@ -11,8 +13,13 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    const res = await loginUser({ credential: username, password })
+    if (res.statusCode !== 200){
+      toast.error(res.message)
+      return;
+    }
     if (login(username, password)) {
       navigate("/home")
     } else {
