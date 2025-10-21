@@ -12,6 +12,7 @@ import Profile from "./pages/Profile"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import VerifyEmail from "./pages/VerifyEmail"
+import ReduxSagaDemo from './pages/ReduxSagaDemo'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useApp()
@@ -79,6 +80,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reduxSagaDemo"
+            element={
+              <ProtectedRoute>
+                <ReduxSagaDemo />
               </ProtectedRoute>
             }
           />
