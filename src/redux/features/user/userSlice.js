@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { catSlice } from "../cat/catSlice";
 
 export const userSlice = createSlice ({
     name: 'users',
@@ -7,6 +6,6 @@ export const userSlice = createSlice ({
     reducers: {}
 })
 
-export const {} = catSlice.actions;
+export const {} = userSlice.actions;
 
-export default catSlice.reducer;
+export default userSlice.reducer;
