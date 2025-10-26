@@ -1,13 +1,15 @@
 "use client"
 import { Moon, Sun } from "lucide-react"
-import { useApp } from "../context/AppContext"
+import { useSelector, useDispatch } from "react-redux";
+import { toggleTheme } from "../redux/features/theme/themeSlice";
 
 export default function ThemeToggle() {
-  const { theme, toggleTheme } = useApp()
+  const theme = useSelector((state) => state.theme.theme);
+  const dispatch = useDispatch();
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={() => dispatch(toggleTheme())}
       className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       aria-label="Toggle theme"
     >

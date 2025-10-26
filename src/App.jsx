@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { ToastContainer } from 'react-toastify';
-import { AppProvider, useApp } from "./context/AppContext"
+// import { AppProvider } from "./context/AppContext"
+import { useSelector } from "react-redux";
 import Sidebar from "./components/Sidebar"
 import Navbar from "./components/Navbar"
 import Home from "./pages/Home"
@@ -14,12 +15,12 @@ import Signup from "./pages/Signup"
 import VerifyEmail from "./pages/VerifyEmail"
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useApp()
+  const { isAuthenticated } = useSelector((state) => state.auth);
   return isAuthenticated ? children : <Navigate to="/login" />
 }
 
 function AppContent() {
-  const { isAuthenticated } = useApp()
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   return (
     <BrowserRouter>
@@ -82,7 +83,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to="/home" />} />
         </Routes>
       </main>
       <ToastContainer position="top-right" autoClose={3000} />
@@ -92,8 +93,8 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AppProvider>
+    // <AppProvider>
       <AppContent />
-    </AppProvider>
+    // </AppProvider>
   )
 }
