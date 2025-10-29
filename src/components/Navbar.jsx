@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { Home, Compass, Film, MessageCircle, Heart } from "lucide-react"
+import { Home, Compass, Film, MessageCircle, Heart, PlusSquare} from "lucide-react"
 import { useApp } from "../context/AppContext"
 
 export default function Navbar() {
