@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { ToastContainer } from 'react-toastify';
-// import { AppProvider } from "./context/AppContext"
+import { AppProvider } from "./context/AppContext"
 import { useSelector } from "react-redux";
 import Sidebar from "./components/Sidebar"
 import Navbar from "./components/Navbar"
@@ -93,8 +93,8 @@ function AppContent() {
 
 export default function App() {
   return (
-    // <AppProvider>
+    <AppProvider>
       <AppContent />
-    // </AppProvider>
+    </AppProvider>
   )
 }
