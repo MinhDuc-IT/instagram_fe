@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom"
+// import { useApp } from "../context/AppContext"
+import { useSelector } from "react-redux";
 import { Home, Compass, Film, MessageCircle, Heart, PlusSquare} from "lucide-react"
 import { useApp } from "../context/AppContext"
 
 export default function Navbar() {
   const location = useLocation()
-  const { currentUser } = useApp()
+  const { currentUser } = useSelector((state) => state.auth);
 
   const navItems = [
     { path: "/home", icon: Home, label: "Home" },
@@ -30,12 +32,12 @@ export default function Navbar() {
           </Link>
         ))}
         <Link
-          to={`/profile/${currentUser.username}`}
+          to={`/profile/${currentUser?.username}`}
           className={`p-2 ${location.pathname.includes("/profile") ? "text-black dark:text-white" : "text-gray-500"}`}
         >
           <img
-            src={currentUser.avatar || "/placeholder.svg"}
-            alt={currentUser.username}
+            src={currentUser?.avatar || "/placeholder.svg"}
+            alt={currentUser?.username}
             className="w-6 h-6 rounded-full object-cover"
           />
         </Link>

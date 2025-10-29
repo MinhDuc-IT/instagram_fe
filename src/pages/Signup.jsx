@@ -3,12 +3,12 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
-import { useApp } from "../context/AppContext"
+// import { useApp } from "../context/AppContext"
 import { registerNewUser } from "../service/authService"
 
 export default function Signup() {
   const navigate = useNavigate()
-  const { login } = useApp()
+  // const { login } = useApp()
   const [email, setEmail] = useState("")
   const [fullname, setFullName] = useState("")
   const [username, setUsername] = useState("")
@@ -41,7 +41,7 @@ export default function Signup() {
           <h1 className="text-4xl font-bold text-center mb-2">Instagram</h1>
           <p className="text-center text-gray-500 text-sm mb-6">Sign up to see photos and videos from your friends.</p>
 
-          <button className="w-full btn-primary mb-4">Log in with Facebook</button>
+          <button className="w-full btn-primary mb-4 rounded-xl">Log in with Facebook</button>
 
           <div className="flex items-center gap-4 my-6">
             <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700" />
@@ -87,7 +87,7 @@ export default function Signup() {
               By signing up, you agree to our Terms, Data Policy and Cookies Policy.
             </p>
 
-            <button type="submit" className="w-full btn-primary">
+            <button type="submit" className="w-full btn-primary rounded-xl">
               Sign Up
             </button>
           </form>

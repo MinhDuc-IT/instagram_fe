@@ -26,7 +26,7 @@ export const AppProvider = ({ children }) => {
   const [notifications, setNotifications] = useState(initialNotifications)
   const [messages, setMessages] = useState(initialMessages)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem("isAuthenticated") === "true"
+    return localStorage.getItem("isAuthenticated") === "true" 
   })
 
   useEffect(() => {

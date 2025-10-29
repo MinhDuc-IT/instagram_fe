@@ -1,31 +1,35 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { useApp } from "../context/AppContext"
-import { loginUser } from "../service/authService"
 import { toast } from "react-toastify"
+import { useDispatch, useSelector } from "react-redux";
+import { loginRequest } from "../redux/features/auth/authSlice";
 
 export default function Login() {
-  const navigate = useNavigate()
-  const { login } = useApp()
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const { user, loading, error } = useSelector((state) => state.auth);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const res = await loginUser({ credential: username, password })
-    if (res.statusCode !== 200){
-      toast.error(res.message)
-      return;
+  useEffect(() => {
+    if (user) {
+      toast.success("Đăng nhập thành công!");
+      navigate("/home");
     }
-    if (login(username, password)) {
-      navigate("/home")
-    } else {
-      setError("Invalid credentials")
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
     }
-  }
+  }, [error]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    dispatch(loginRequest({ credential: username, password }));
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-ig-bg dark:bg-black p-4">
@@ -52,10 +56,17 @@ export default function Login() {
               required
             />
 
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+            {/* {error && <p className="text-red-500 text-sm text-center">{error}</p>} */}
 
-            <button type="submit" className="w-full btn-primary">
+            {/* <button type="submit" className="w-full btn-primary">
               Log In
+            </button> */}
+            <button
+              type="submit"
+              className="w-full btn-primary"
+              disabled={loading}
+            >
+              {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
 

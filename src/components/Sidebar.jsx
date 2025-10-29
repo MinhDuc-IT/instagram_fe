@@ -1,19 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Home, Compass, Film, MessageCircle, Heart, PlusSquare, LogOut } from "lucide-react"
-import { useApp } from "../context/AppContext"
+import { useDispatch } from "react-redux"
+import { useSelector } from "react-redux";
+import { logoutRequest } from "../redux/features/auth/authSlice"
 import ThemeToggle from "./ThemeToggle"
 import ModalCreatePost from "./ModalCreatePost"
 import CreatePostModal from "./CreatePost"
 
 export default function Sidebar() {
+  const dispatch = useDispatch();
   const location = useLocation()
   const navigate = useNavigate()
-  const { currentUser, logout } = useApp()
+  const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [openPostModal, setOpenPostModal] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   const navItems = [
     { path: "/home", icon: Home, label: "Home" },
@@ -26,8 +35,7 @@ export default function Sidebar() {
   const isActive = (path) => location.pathname === path
 
   const handleLogout = () => {
-    logout()
-    navigate("/login")
+    dispatch(logoutRequest());
   }
 
   return (
@@ -67,13 +75,14 @@ export default function Sidebar() {
           </button>
 
           <Link
-            to={`/profile/${currentUser.username}`}
-            className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${location.pathname.includes("/profile") ? "font-bold" : "hover:bg-gray-100 dark:hover:bg-gray-900"
-              }`}
+            to={`/profile/${user?.username}`}
+            className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${
+              location.pathname.includes("/profile") ? "font-bold" : "hover:bg-gray-100 dark:hover:bg-gray-900"
+            }`}
           >
             <img
-              src={currentUser.avatar || "/placeholder.svg"}
-              alt={currentUser.username}
+              src={user?.avatar || "/placeholder.svg"}
+              alt={user?.username || "hvduc75"}
               className="w-6 h-6 rounded-full object-cover"
             />
             <span>Profile</span>
