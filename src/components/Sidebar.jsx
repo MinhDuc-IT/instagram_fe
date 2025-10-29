@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 import { logoutRequest } from "../redux/features/auth/authSlice"
 import ThemeToggle from "./ThemeToggle"
 import ModalCreatePost from "./ModalCreatePost"
+import CreatePostModal from "./CreatePost"
 
 export default function Sidebar() {
   const dispatch = useDispatch();
@@ -15,6 +16,7 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [openPostModal, setOpenPostModal] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -48,9 +50,8 @@ export default function Sidebar() {
             <Link
               key={path}
               to={path}
-              className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${
-                isActive(path) ? "font-bold" : "hover:bg-gray-100 dark:hover:bg-gray-900"
-              }`}
+              className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${isActive(path) ? "font-bold" : "hover:bg-gray-100 dark:hover:bg-gray-900"
+                }`}
             >
               <Icon className="w-6 h-6" fill={isActive(path) ? "currentColor" : "none"} />
               <span>{label}</span>
@@ -63,6 +64,14 @@ export default function Sidebar() {
           >
             <PlusSquare className="w-6 h-6" />
             <span>Create</span>
+          </button>
+
+          <button
+            onClick={() => setOpenPostModal(true)}
+            className="flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors w-full"
+          >
+            <PlusSquare className="w-6 h-6" />
+            <span>Create Post v2</span>
           </button>
 
           <Link
@@ -96,6 +105,9 @@ export default function Sidebar() {
       </aside>
 
       {showCreateModal && <ModalCreatePost onClose={() => setShowCreateModal(false)} />}
+
+      <CreatePostModal open={openPostModal} onClose={() => setOpenPostModal(false)} />
+
     </>
   )
 }
