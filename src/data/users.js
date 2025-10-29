@@ -98,9 +98,9 @@ export const users = [
 ]
 
 export const currentUser = {
-  id: 0,
-  username: "your_username",
-  fullName: "Your Name",
+  id: 5,
+  username: "teamwork",
+  fullName: "Team Work",
   avatar: "https://i.pravatar.cc/150?img=10",
   bio: "Living my best life 🌟",
   followers: 987,
