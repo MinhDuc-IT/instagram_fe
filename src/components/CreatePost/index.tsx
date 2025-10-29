@@ -6,6 +6,7 @@ import CaptionStep from './CaptionStep';
 import ThumbnailStrip from './ThumbnailStrip';
 import { MediaFile } from '../../types/media.types';
 import { useMediaUpload } from '../../hooks/useMediaUpload';
+import { usePostUpload } from '../../hooks/usePostUpload';
 
 type Step = 'select' | 'edit' | 'caption';
 
@@ -23,6 +24,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { uploading, uploadProgress, uploadMultiple } = useMediaUpload();
+    const { uploading: postUploading, uploadProgress: postUploadProgress, uploadPost } = usePostUpload();
 
     if (!open) return null;
 
@@ -77,26 +79,42 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
     };
 
     const handlePost = async () => {
-        const updatedFiles = mediaFiles.map((m) => ({ ...m, uploading: true }));
-        setMediaFiles(updatedFiles);
+        // const updatedFiles = mediaFiles.map((m) => ({ ...m, uploading: true }));
+        // setMediaFiles(updatedFiles);
 
-        const results = await uploadMultiple(mediaFiles);
-        const finalFiles = mediaFiles.map((media, idx) => ({
-            ...media,
-            uploadResponse: results[idx],
-            uploading: false,
-        }));
-        setMediaFiles(finalFiles);
+        // const results = await uploadMultiple(mediaFiles);
+        // const finalFiles = mediaFiles.map((media, idx) => ({
+        //     ...media,
+        //     uploadResponse: results[idx],
+        //     uploading: false,
+        // }));
+        // setMediaFiles(finalFiles);
 
-        alert('Post created successfully!');
-        onClose();
+        try {
+            const result = await uploadPost(
+                caption,
+                location,
+                'public',
+                false,
+                false,
+                mediaFiles
+            );
 
-        setStep('select');
-        setMediaFiles([]);
-        setCaption('');
-        setLocation('');
-        setCurrentIndex(0);
-        onClose();
+            console.log('✅ Post created:', result);
+            alert('Post created successfully!');
+            onClose();
+
+            setStep('select');
+            setMediaFiles([]);
+            setCaption('');
+            setLocation('');
+            setCurrentIndex(0);
+            onClose();
+        } catch (error) {
+            console.error('❌ Post creation failed:', error);
+            alert('Failed to create post. Please try again.');
+            return;
+        }
     };
 
     const removeMedia = (id: string) => {
