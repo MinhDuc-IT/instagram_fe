@@ -13,6 +13,10 @@ const loginUser = (loginUserDTO: { credential: string; password: string }) => {
     return axios.post('/auth/login', loginUserDTO);
 }
 
+const loginWithFacebook = () => {
+    return axios.get('/auth/facebook');
+};
+
 const logoutUser = () => {
     return axios.post('/auth/logout');
 }
@@ -21,4 +25,4 @@ const verifyEmail = (token: string) => {
     return axios.post('/auth/verify', { token });
 }
 
-export { registerNewUser, verifyEmail, loginUser, logoutUser };
+export { registerNewUser, verifyEmail, loginUser, logoutUser, loginWithFacebook };
