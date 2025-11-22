@@ -29,9 +29,7 @@ const addRefreshSubscriber = (callback) => {
 // Thêm request interceptor
 instance.interceptors.request.use(
     function (config) {
-        console.log("Request config:", store?.getState());
         const access_token = store?.getState()?.auth?.accessToken;
-        console.log("Access Token in request interceptor:", access_token);
         if (access_token) {
             config.headers['Authorization'] = `Bearer ${access_token}`;
         }
@@ -48,6 +46,7 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
     function (response) {
         NProgress.done();
+        console.log('Response:', response);
         return response && response.data ? response.data : response;
     },
     // async function (error) {
@@ -168,7 +167,8 @@ instance.interceptors.response.use(
         }
 
         // 🧠 Nếu là 401 do login sai hoặc refresh sai → reject về saga
-        return Promise.reject(error);
+        // return Promise.reject(error);
+        return response && response.data ? response.data : Promise.reject(error);
     }
 );
 

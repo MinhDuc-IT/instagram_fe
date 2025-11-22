@@ -13,6 +13,7 @@ import Profile from "./pages/Profile"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import VerifyEmail from "./pages/VerifyEmail"
+import SocialLogin from "./pages/SocialLogin"
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -35,6 +36,7 @@ function AppContent() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/code/:userId/:tokenLogin" element={<SocialLogin />} />
           <Route
             path="/home"
             element={
