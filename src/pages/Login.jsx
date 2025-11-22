@@ -26,13 +26,24 @@ export default function Login() {
     }
   }, [error]);
 
+  useEffect(() => {
+      if (loading) {
+          document.body.style.cursor = 'wait';
+      } else {
+          document.body.style.cursor = 'default';
+      }
+      return () => {
+          document.body.style.cursor = 'default';
+      };
+  }, [loading]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     dispatch(loginRequest({ credential: username, password }));
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-ig-bg dark:bg-black p-4">
+    <div className={`min-h-screen flex items-center justify-center bg-ig-bg dark:bg-black p-4 ${loading ? "cursor-wait pointer-events-none" : ""}`}>
       <div className="w-full max-w-sm space-y-4">
         {/* Main Card */}
         <div className="card p-10">
@@ -63,10 +74,10 @@ export default function Login() {
             </button> */}
             <button
               type="submit"
-              className="w-full btn-primary"
+              className={`w-full btn-primary rounded-xl ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
               disabled={loading}
             >
-              {loading ? "Logging in..." : "Log In"}
+              Log In
             </button>
           </form>
 
@@ -76,7 +87,7 @@ export default function Login() {
             <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700" />
           </div>
 
-          <button className="w-full text-ig-primary font-semibold text-sm">Log in with Facebook</button>
+          <button className={`w-full text-ig-primary font-semibold text-sm ${loading ? "opacity-70 cursor-not-allowed" : ""}`}>Log in with Facebook</button>
 
           <Link to="/forgot-password" className="block text-center text-xs text-gray-500 mt-4">
             Forgot password?
@@ -87,7 +98,7 @@ export default function Login() {
         <div className="card p-6 text-center">
           <p className="text-sm">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-ig-primary font-semibold">
+            <Link to="/signup" className={`text-ig-primary font-semibold ${loading ? "opacity-70 cursor-not-allowed" : ""}`}>
               Sign up
             </Link>
           </p>
