@@ -1,22 +1,32 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
-import { Home, Compass, Film, MessageCircle, Heart, PlusSquare, LogOut } from "lucide-react"
-import { useDispatch } from "react-redux"
-import { useSelector } from "react-redux";
-import { logoutRequest } from "../redux/features/auth/authSlice"
-import ThemeToggle from "./ThemeToggle"
-import ModalCreatePost from "./ModalCreatePost"
-import CreatePostModal from "./CreatePost"
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Home, Compass, Film, MessageCircle, Heart, PlusSquare, LogOut } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutRequest } from "../redux/features/auth/authSlice";
+import ThemeToggle from "./ThemeToggle";
+import ModalCreatePost from "./ModalCreatePost";
+import CreatePostModal from "./CreatePost";
+import type { RootState, AppDispatch } from "../redux/store";
+
+interface NavItem {
+  path: string;
+  icon: React.ComponentType<{ className?: string; fill?: string }>;
+  label: string;
+}
 
 export default function Sidebar() {
-  const dispatch = useDispatch();
-  const location = useLocation()
-  const navigate = useNavigate()
-  const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [openPostModal, setOpenPostModal] = useState(false);
+  const dispatch = useDispatch < AppDispatch > ();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const { user, isAuthenticated, loading } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  const [showCreateModal, setShowCreateModal] = useState < boolean > (false);
+  const [openPostModal, setOpenPostModal] = useState < boolean > (false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -24,19 +34,19 @@ export default function Sidebar() {
     }
   }, [isAuthenticated, loading, navigate]);
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { path: "/home", icon: Home, label: "Home" },
     { path: "/explore", icon: Compass, label: "Explore" },
     { path: "/reels", icon: Film, label: "Reels" },
     { path: "/messages", icon: MessageCircle, label: "Messages" },
     { path: "/notifications", icon: Heart, label: "Notifications" },
-  ]
+  ];
 
-  const isActive = (path) => location.pathname === path
+  const isActive = (path: string) => location.pathname === path;
 
   const handleLogout = () => {
     dispatch(logoutRequest());
-  }
+  };
 
   return (
     <>
@@ -75,14 +85,16 @@ export default function Sidebar() {
           </button>
 
           <Link
-            to={`/profile/${user?.username}`}
-            className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${
-              location.pathname.includes("/profile") ? "font-bold" : "hover:bg-gray-100 dark:hover:bg-gray-900"
-            }`}
+            to={`/profile/${user?.id ?? ""}`}
+            className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${location.pathname.includes("/profile")
+                ? "font-bold"
+                : "hover:bg-gray-100 dark:hover:bg-gray-900"
+              }`}
           >
             <img
-              src={user?.avatar || "/placeholder.svg"}
-              alt={user?.username || "hvduc75"}
+              src={ "/placeholder.svg"}
+              // src={user?.avatar || "/placeholder.svg"}
+              alt={user?.username || "avatar"}
               className="w-6 h-6 rounded-full object-cover"
             />
             <span>Profile</span>
@@ -107,7 +119,6 @@ export default function Sidebar() {
       {showCreateModal && <ModalCreatePost onClose={() => setShowCreateModal(false)} />}
 
       <CreatePostModal open={openPostModal} onClose={() => setOpenPostModal(false)} />
-
     </>
-  )
+  );
 }

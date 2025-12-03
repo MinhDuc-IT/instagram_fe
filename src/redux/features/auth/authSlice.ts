@@ -1,0 +1,139 @@
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+// User info
+export interface User {
+    id: string;
+    email: string;
+    fullName?: string;
+    username?: string;
+    avatar?: string;
+    bio?: string | null;
+    posts?: number;
+    followers?: number;
+    following?: number;
+}
+
+// Auth state
+export interface AuthState {
+    user: User | null;
+    accessToken: string | null;
+    refreshToken: string | null;
+    isAuthenticated: boolean;
+    expiresAt: string | null;
+    loading: boolean;
+    error: string | null;
+}
+
+const initialState: AuthState = {
+    user: null,
+    accessToken: localStorage.getItem("accessToken") || null,
+    refreshToken: localStorage.getItem("refreshToken") || null,
+    isAuthenticated: !!localStorage.getItem("accessToken"),
+    expiresAt: null,
+    loading: false,
+    error: null,
+};
+
+// Payloads
+export interface LoginPayload {
+    credential: string; // email hoặc username
+    password: string;
+}
+
+export interface LoginResponse {
+    id: string;
+    email: string;
+    fullName?: string;
+    username?: string;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: string;
+    avatar?: string;
+}
+
+export interface UpdateProfilePayload {
+    fullName?: string;
+    username?: string;
+}
+
+// Slice
+export const authSlice = createSlice({
+    name: "auth",
+    initialState,
+    reducers: {
+        // Login
+        loginRequest: (state, _action: PayloadAction<LoginPayload>) => {
+            state.loading = true;
+            state.error = null;
+        },
+        loginSuccess: (state, action: PayloadAction<LoginResponse>) => {
+            const { id, email, fullName, username, accessToken, refreshToken, expiresAt, avatar } =
+                action.payload;
+            console.log("loginSuccess payload", action.payload);
+            state.user = { id, email, fullName, username, avatar };
+            state.accessToken = accessToken;
+            state.refreshToken = refreshToken;
+            state.expiresAt = expiresAt;
+            state.loading = false;
+            state.isAuthenticated = true;
+
+            localStorage.setItem("accessToken", accessToken);
+            localStorage.setItem("refreshToken", refreshToken);
+        },
+        loginFailure: (state, action: PayloadAction<string>) => {
+            state.loading = false;
+            state.error = action.payload;
+        },
+
+        // Logout
+        logoutRequest: (state) => {
+            state.loading = true;
+            state.error = null;
+        },
+        logoutSuccess: (state) => {
+            state.user = null;
+            state.accessToken = null;
+            state.refreshToken = null;
+            state.expiresAt = null;
+            state.isAuthenticated = false;
+            state.loading = false;
+
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+        },
+        logoutFailure: (state, action: PayloadAction<string>) => {
+            state.loading = false;
+            state.error = action.payload;
+        },
+
+        // Update profile
+        updateProfileRequest: (state, _action: PayloadAction<UpdateProfilePayload>) => {
+            state.loading = true;
+            state.error = null;
+        },
+        updateProfileSuccess: (state, action: PayloadAction<UpdateProfilePayload>) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+            }
+            state.loading = false;
+        },
+        updateProfileFailure: (state, action: PayloadAction<string>) => {
+            state.loading = false;
+            state.error = action.payload;
+        },
+    },
+});
+
+export const {
+    loginRequest,
+    loginSuccess,
+    loginFailure,
+    logoutRequest,
+    logoutSuccess,
+    logoutFailure,
+    updateProfileRequest,
+    updateProfileSuccess,
+    updateProfileFailure,
+} = authSlice.actions;
+
+export default authSlice.reducer;

@@ -1,24 +1,33 @@
 import axios from "../utils/axiosCustomize";
+import { AxiosResponse } from "axios";
+import { LoginResponse } from "../redux/features/auth/authSlice";
 
-const registerNewUser = (userData: {
+// Input DTOs
+export interface RegisterUserDTO {
     email: string;
     password: string;
     fullName: string;
     username: string;
-}) => {
-    return axios.post('/auth/register', userData);
+}
+
+export interface LoginUserDTO {
+    credential: string;
+    password: string;
+}
+
+// API calls
+export const registerNewUser = (userData: RegisterUserDTO): Promise<AxiosResponse<any>> => {
+    return axios.post("/auth/register", userData);
 };
 
-const loginUser = (loginUserDTO: { credential: string; password: string }) => {
-    return axios.post('/auth/login', loginUserDTO);
-}
+export const loginUser = (loginUserDTO: LoginUserDTO): Promise<AxiosResponse<LoginResponse>> => {
+    return axios.post<LoginResponse>("/auth/login", loginUserDTO);
+};
 
-const logoutUser = () => {
-    return axios.post('/auth/logout');
-}
+export const logoutUser = (): Promise<AxiosResponse<void>> => {
+    return axios.post("/auth/logout");
+};
 
-const verifyEmail = (token: string) => {
-    return axios.post('/auth/verify', { token });
-}
-
-export { registerNewUser, verifyEmail, loginUser, logoutUser };
+export const verifyEmail = (token: string): Promise<AxiosResponse<any>> => {
+    return axios.post("/auth/verify", { token });
+};

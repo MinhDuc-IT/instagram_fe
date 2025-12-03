@@ -27,7 +27,7 @@ export const PostService = {
         });
 
         // 🔐 Gửi request
-        const res = await axios.post(`post`, formData, {
+        const res = await axios.post(`post/background`, formData, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${token}`,

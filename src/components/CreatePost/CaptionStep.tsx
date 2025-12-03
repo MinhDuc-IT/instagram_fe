@@ -2,6 +2,8 @@ import React from 'react';
 import { Smile, MapPin, ChevronDown } from 'lucide-react';
 import MediaPreview from './MediaPreview';
 import { MediaFile } from '../../types/media.types';
+import { RootState, AppDispatch } from "../../redux/store";
+import { useSelector } from 'react-redux';
 
 interface CaptionStepProps {
     currentMedia: MediaFile;
@@ -26,6 +28,8 @@ const CaptionStep: React.FC<CaptionStepProps> = ({
     onCaptionChange,
     onLocationChange,
 }) => {
+    const { user: currentUser } = useSelector((state: RootState) => state.auth);
+
     return (
         <>
             <MediaPreview
@@ -38,7 +42,7 @@ const CaptionStep: React.FC<CaptionStepProps> = ({
             <div className="w-96 border-l flex flex-col">
                 <div className="p-4 border-b flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
-                    <span className="font-semibold text-sm">your_username</span>
+                    <span className="font-semibold text-sm">{currentUser?.username}</span>
                 </div>
 
                 <div className="flex-1 p-4 overflow-y-auto">
