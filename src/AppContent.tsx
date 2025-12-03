@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./ProtectedRoute";
+import SocialLogin from "./pages/SocialLogin"
 
 export default function AppContent() {
     const isAuthenticated = useSelector(
@@ -34,6 +35,7 @@ export default function AppContent() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
+                    <Route path="/code/:userId/:tokenLogin" element={<SocialLogin />} />
 
                     <Route
                         path="/home"
