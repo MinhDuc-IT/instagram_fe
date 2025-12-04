@@ -32,7 +32,7 @@ export default function Navbar() {
           </Link>
         ))}
         <Link
-          to={`/profile/${currentUser?.username}`}
+          to={`/profile/${currentUser?.id}`}
           className={`p-2 ${location.pathname.includes("/profile") ? "text-black dark:text-white" : "text-gray-500"}`}
         >
           <img

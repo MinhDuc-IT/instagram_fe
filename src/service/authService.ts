@@ -1,17 +1,28 @@
 import axios from "../utils/axiosCustomize";
+import { AxiosResponse } from "axios";
+import { LoginResponse } from "../redux/features/auth/authSlice";
 
-const registerNewUser = (userData: {
+// Input DTOs
+export interface RegisterUserDTO {
     email: string;
     password: string;
     fullName: string;
     username: string;
-}) => {
-    return axios.post('/auth/register', userData);
+}
+
+export interface LoginUserDTO {
+    credential: string;
+    password: string;
+}
+
+// API calls
+const registerNewUser = (userData: RegisterUserDTO): Promise<AxiosResponse<any>> => {
+    return axios.post("/auth/register", userData);
 };
 
-const loginUser = (loginUserDTO: { credential: string; password: string }) => {
-    return axios.post('/auth/login', loginUserDTO);
-}
+const loginUser = (loginUserDTO: LoginUserDTO): Promise<AxiosResponse<LoginResponse>> => {
+    return axios.post<LoginResponse>("/auth/login", loginUserDTO);
+};
 
 const loginWithFacebook = () => {
     return axios.get('/auth/facebook');
