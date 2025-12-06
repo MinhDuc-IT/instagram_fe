@@ -12,7 +12,7 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, onEditProfile }: ProfileHeaderProps) {  
   if (!profileUser) return null;
-
+  console.log("Rendering ProfileHeader for user:", profileUser);
   return (
     <div className="card p-6 mb-4">
       <div className="flex flex-col md:flex-row gap-8">

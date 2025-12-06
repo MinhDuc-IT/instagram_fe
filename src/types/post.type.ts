@@ -12,6 +12,17 @@ export interface Media {
   fileSize: number;
 }
 
+export interface Comment {
+  id: number;
+  userId: number;
+  username: string;
+  userAvatar: string | null;
+  content: string;
+  replyTo: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Post {
   id: string;
   userId: number;
@@ -23,7 +34,8 @@ export interface Post {
   media: Media[];
   timestamp?: string; // createdDate từ BE
   likes?: number;
-  comments?: any[];
+  comments?: Comment[];
+  commentsCount?: number;
   isLiked?: boolean;
   isSaved?: boolean;
 }
