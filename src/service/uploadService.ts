@@ -28,7 +28,8 @@ class UploadService {
             },
         });
 
-        return response.data;
+        console.log("UploadService uploadImage response:", response);
+        return response;
     }
 
     /**

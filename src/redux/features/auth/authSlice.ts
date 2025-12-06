@@ -6,6 +6,8 @@ export interface User {
     email: string;
     fullName?: string;
     username?: string;
+    phone?: string;
+    gender?: boolean;
     avatar?: string;
     bio?: string | null;
     posts?: number;
@@ -45,6 +47,8 @@ export interface LoginResponse {
     email: string;
     fullName?: string;
     username?: string;
+    phone?: string;
+    gender?: boolean;
     accessToken: string;
     refreshToken: string;
     expiresAt: string;
@@ -67,10 +71,11 @@ export const authSlice = createSlice({
             state.error = null;
         },
         loginSuccess: (state, action: PayloadAction<LoginResponse>) => {
-            const { id, email, fullName, username, accessToken, refreshToken, expiresAt, avatar } =
+            const { id, email, fullName, username, phone, gender, accessToken, refreshToken, expiresAt, avatar } =
                 action.payload;
             console.log("loginSuccess payload", action.payload);
-            state.user = { id, email, fullName, username, avatar };
+            console.log("Setting user in state:", { id, email, fullName, username, avatar, phone, gender });
+            state.user = { id, email, fullName, username, avatar, phone, gender };
             state.accessToken = accessToken;
             state.refreshToken = refreshToken;
             state.expiresAt = expiresAt;
@@ -106,21 +111,21 @@ export const authSlice = createSlice({
             state.error = action.payload;
         },
 
-        // Update profile
-        updateProfileRequest: (state, _action: PayloadAction<UpdateProfilePayload>) => {
-            state.loading = true;
-            state.error = null;
-        },
-        updateProfileSuccess: (state, action: PayloadAction<UpdateProfilePayload>) => {
-            if (state.user) {
-                state.user = { ...state.user, ...action.payload };
-            }
-            state.loading = false;
-        },
-        updateProfileFailure: (state, action: PayloadAction<string>) => {
-            state.loading = false;
-            state.error = action.payload;
-        },
+        // // Update profile
+        // updateProfileRequest: (state, _action: PayloadAction<UpdateProfilePayload>) => {
+        //     state.loading = true;
+        //     state.error = null;
+        // },
+        // updateProfileSuccess: (state, action: PayloadAction<UpdateProfilePayload>) => {
+        //     if (state.user) {
+        //         state.user = { ...state.user, ...action.payload };
+        //     }
+        //     state.loading = false;
+        // },
+        // updateProfileFailure: (state, action: PayloadAction<string>) => {
+        //     state.loading = false;
+        //     state.error = action.payload;
+        // },
     },
 });
 
@@ -131,9 +136,9 @@ export const {
     logoutRequest,
     logoutSuccess,
     logoutFailure,
-    updateProfileRequest,
-    updateProfileSuccess,
-    updateProfileFailure,
+    // updateProfileRequest,
+    // updateProfileSuccess,
+    // updateProfileFailure,
 } = authSlice.actions;
 
 export default authSlice.reducer;

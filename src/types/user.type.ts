@@ -7,3 +7,10 @@ export interface User {
     isFollowing?: boolean;
     [key: string]: any;
 }
+
+export interface UserUpdateRequest {
+  fullName?: string;
+  avatar?: string;
+  phone?: string;
+  gender?: number;
+}

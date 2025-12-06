@@ -1,6 +1,7 @@
 import axios from "../utils/axiosCustomize";
 import { Post } from "../types/post.type";
-import { User } from "../types/user.type";
+import { User, UserUpdateRequest } from "../types/user.type";
+import { AxiosResponse } from "axios";
 
 export interface ApiResponse<T> {
     statusCode: number;
@@ -54,3 +55,10 @@ export const getUserByIdApi = async (userId: number): Promise<User> => {
         isFollowing: data.isFollowing || false,
     } as User;
 };
+
+// Update user profile
+export const updateProfile = (payload: UserUpdateRequest): Promise<AxiosResponse<User>> => {
+    const res = axios.patch("/users/me", payload);
+    console.log("API response for updateProfile:", res);
+    return res;
+}

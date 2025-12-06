@@ -92,8 +92,7 @@ export default function Sidebar() {
               }`}
           >
             <img
-              src={ "/placeholder.svg"}
-              // src={user?.avatar || "/placeholder.svg"}
+              src={user?.avatar || "/placeholder.svg"}
               alt={user?.username || "avatar"}
               className="w-6 h-6 rounded-full object-cover"
             />
