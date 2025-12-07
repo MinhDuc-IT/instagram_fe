@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Post } from "../../../types/post.type";
+import {UserUpdateRequest } from "../../../types/user.type";
 export interface User {
     id: number;
     username: string;
@@ -82,6 +83,25 @@ export const userSlice = createSlice({
             state.error = action.payload;
         },
 
+        // update profile
+        updateProfileRequest: (state, _action: PayloadAction<UserUpdateRequest>) => {
+            state.loading = true;
+            state.error = null;
+        },
+        updateProfileSuccess: (state, action: PayloadAction<User>) => {
+            state.loading = false;
+            state.profileUser = action.payload;
+
+            // Nếu bạn muốn cập nhật cả danh sách users
+            state.users = state.users.map((u) =>
+                u.id === action.payload.id ? action.payload : u
+            );
+        },
+        updateProfileFailure: (state, action: PayloadAction<string>) => {
+            state.loading = false;
+            state.error = action.payload;
+        },
+
         // Posts
         fetchUserPostsRequest: (state, _action: PayloadAction<number>) => {
             state.loading = true;
@@ -122,6 +142,36 @@ export const userSlice = createSlice({
             state.error = action.payload;
         },
 
+        // Update a single post in userPosts (used for optimistic updates)
+        updatePost: (state, action: PayloadAction<Post>) => {
+            const updated = action.payload;
+            state.userPosts = state.userPosts.map((p) => (p.id === updated.id ? updated : p));
+        },
+
+        // Toggle like on a post (optimistic)
+        toggleLikePost: (state, action: PayloadAction<{ postId: string; isLiked: boolean; likes: number }>) => {
+            const { postId, isLiked, likes } = action.payload;
+            state.userPosts = state.userPosts.map((p) =>
+                p.id === postId ? { ...p, isLiked, likes } as Post : p
+            );
+        },
+
+        // Toggle save on a post
+        toggleSavePost: (state, action: PayloadAction<{ postId: string; isSaved: boolean }>) => {
+            const { postId, isSaved } = action.payload;
+            state.userPosts = state.userPosts.map((p) =>
+                p.id === postId ? { ...p, isSaved } as Post : p
+            );
+        },
+
+        // Add comment to post (optimistic)
+        addCommentToPost: (state, action: PayloadAction<{ postId: string; comment: any }>) => {
+            const { postId, comment } = action.payload;
+            state.userPosts = state.userPosts.map((p) =>
+                p.id === postId ? { ...p, comments: [...(p.comments || []), comment] } as Post : p
+            );
+        },
+
         // Follow/unfollow
         toggleFollow: (state, action: PayloadAction<number>) => {
             const userId = action.payload;
@@ -156,7 +206,14 @@ export const {
     fetchSavedPostsRequest,
     fetchSavedPostsSuccess,
     fetchSavedPostsFailure,
+    updatePost,
+    toggleLikePost,
+    toggleSavePost,
+    addCommentToPost,
     toggleFollow,
+    updateProfileRequest,
+    updateProfileSuccess,
+    updateProfileFailure,
 } = userSlice.actions;
 
 export default userSlice.reducer;

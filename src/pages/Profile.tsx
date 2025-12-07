@@ -1,13 +1,13 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Grid, Bookmark, Film, X, Loader } from "lucide-react";
+import { Grid, Bookmark, Film, X, Loader, Heart, MessageCircle } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import ProfileHeader from "../components/ProfileHeader";
 import { RootState, AppDispatch } from "../redux/store";
-import { updateProfileRequest } from "../redux/features/auth/authSlice";
 import { fetchProfileUserRequest, fetchSavedPostsRequest } from "../redux/features/user/userSlice";
 import { Post } from "../types/post.type";
-import { Heart, MessageCircle } from "lucide-react";
+import PostModal from "../components/PostModal";
+import EditProfileModal from "../components/EditProfileModal";
 
 export default function Profile() {
   const { userId } = useParams<{ userId: string }>();
@@ -18,10 +18,11 @@ export default function Profile() {
 
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "reels">("posts");
   const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
-  const [editForm, setEditForm] = useState({
-    fullName: currentUser?.fullName || "",
-  });
+  // const [editForm, setEditForm] = useState({
+  //   fullName: currentUser?.fullName || "",
+  // });
 
   // Fetch profile user when userId changes
   useEffect(() => {
@@ -30,14 +31,13 @@ export default function Profile() {
       console.log("🔥 Fetching profile for userId:", id);
       dispatch(fetchProfileUserRequest(id));
     }
-  }, [userId]); // Remove dispatch from dependencies
+  }, [userId]);
 
-  // Update edit form when currentUser changes
-  useEffect(() => {
-    if (currentUser) {
-      setEditForm({ fullName: currentUser.fullName || "" });
-    }
-  }, [currentUser]);
+  // useEffect(() => {
+  //   if (currentUser) {
+  //     setEditForm({ fullName: currentUser.fullName || "" });
+  //   }
+  // }, [currentUser]);
 
   if (!currentUser || !profileUser) {
     return (
@@ -50,14 +50,16 @@ export default function Profile() {
   const isOwnProfile = userId === currentUser.id.toString();
 
   // Filter saved posts (only for own profile)
+  console.log("Filtering saved posts for own profile:", isOwnProfile);
+  console.log("User posts:", userPosts);
   const filteredSavedPosts = isOwnProfile ? userPosts.filter((post: Post) => post.isSaved) : [];
 
-  const handleEditSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    console.log("Submitting edit profile with:", editForm);
-    dispatch(updateProfileRequest({ fullName: editForm.fullName }));
-    setShowEditModal(false);
-  };
+  // const handleEditSubmit = (e: FormEvent) => {
+  //   e.preventDefault();
+  //   console.log("Submitting edit profile with:", editForm);
+  //   dispatch(updateProfileRequest({ fullName: editForm.fullName }));
+  //   setShowEditModal(false);
+  // };
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -106,7 +108,8 @@ export default function Profile() {
           userPosts.map((post) => (
             <div
               key={post.id}
-              className="aspect-square relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 group"
+              className="aspect-square relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 group cursor-pointer"
+              onClick={() => setSelectedPost(post)}
             >
               {/* Carousel media */}
               <div className="w-full h-full flex transition-transform duration-300">
@@ -132,27 +135,24 @@ export default function Profile() {
               </div>
 
               {/* Caption */}
+              {/* Caption removed to match design
               {post.caption && (
                 <div className="absolute bottom-0 left-0 w-full flex items-center justify-center">
-                  <div className="bg-gradient-to-t from-black/90 via-black/60 to-black/15 text-white text-sm p-2 text-center rounded-t-md w-full">
+                  <div className="bg-black/80 text-white text-sm p-2 text-center w-full">
                     {post.caption}
                   </div>
                 </div>
-              )}
+              )} */}
 
               {/* Hover overlay: like & comment */}
-              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-6 text-white transition-opacity">
-                <div className="flex items-center gap-2">
-                  <Heart
-                    size={24}
-                    className={post.isLiked ? "text-red-500" : "text-white"}
-                    strokeWidth={2}
-                  />
-                  <span className="text-sm font-medium">{post.likes}</span>
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-8 text-white transition-opacity">
+                <div className="flex items-center gap-3">
+                  <Heart size={28} fill={post.isLiked ? '#ef4444' : 'none'} stroke={post.isLiked ? '#ef4444' : 'white'} className={post.isLiked ? "text-red-500" : "text-white"} />
+                  <span className="text-lg font-semibold">{(post.likes ?? 0).toLocaleString()}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MessageCircle size={24} strokeWidth={2} />
-                  <span className="text-sm font-medium">{post.comments?.length || 0}</span>
+                <div className="flex items-center gap-3">
+                  <MessageCircle size={28} className="text-white" />
+                  <span className="text-lg font-semibold">{(post.comments?.length ?? 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -163,6 +163,7 @@ export default function Profile() {
             <div
               key={post.id}
               className="aspect-square relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 group"
+              onClick={() => setSelectedPost(post)}
             >
               <img
                 src={post.media[0]?.url || "/placeholder.svg"}
@@ -171,18 +172,14 @@ export default function Profile() {
               />
 
               {/* Hover overlay */}
-              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-6 text-white transition-opacity">
-                <div className="flex items-center gap-2">
-                  <Heart
-                    size={24}
-                    className={post.isLiked ? "text-red-500" : "text-white"}
-                    strokeWidth={2}
-                  />
-                  <span className="text-sm font-medium">{post.likes}</span>
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-8 text-white transition-opacity">
+                <div className="flex items-center gap-3">
+                  <Heart size={28} fill={post.isLiked ? '#ef4444' : 'none'} stroke={post.isLiked ? '#ef4444' : 'white'} className={post.isLiked ? "text-red-500" : "text-white"} />
+                  <span className="text-lg font-semibold">{(post.likes ?? 0).toLocaleString()}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MessageCircle size={24} strokeWidth={2} />
-                  <span className="text-sm font-medium">{post.comments?.length || 0}</span>
+                <div className="flex items-center gap-3">
+                  <MessageCircle size={28} className="text-white" />
+                  <span className="text-lg font-semibold">{(post.comments?.length ?? 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -195,30 +192,18 @@ export default function Profile() {
 
       {/* Edit Profile Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-              <h2 className="text-lg font-semibold">Edit Profile</h2>
-              <button onClick={() => setShowEditModal(false)} className="p-2">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleEditSubmit} className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={editForm.fullName}
-                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                  className="input-field"
-                />
-              </div>
-              <button type="submit" className="w-full btn-primary">
-                Save Changes
-              </button>
-            </form>
-          </div>
-        </div>
+        <EditProfileModal
+          user={currentUser}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
+
+      {/* Post detail modal */}
+      {selectedPost && (
+        <PostModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+        />
       )}
     </div>
   );

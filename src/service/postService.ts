@@ -56,4 +56,33 @@ export const PostService = {
             throw error;
         }
     },
+    async like(postId: string | number) {
+        try {
+            const res = await axios.post(`post/${postId}/like`);
+            return res;
+        } catch (error) {
+            console.error("Error liking post:", error);
+            throw error;
+        }
+    },
+
+    async save(postId: string | number) {
+        try {
+            const res = await axios.post(`post/${postId}/save`);
+            return res;
+        } catch (error) {
+            console.error("Error saving post:", error);
+            throw error;
+        }
+    },
+
+    async comment(postId: string | number, text: string) {
+        try {
+            const res = await axios.post(`post/${postId}/comments`, { text });
+            return res;
+        } catch (error) {
+            console.error("Error commenting on post:", error);
+            throw error;
+        }
+    },
 };

@@ -16,6 +16,9 @@ import {
     fetchSavedPostsRequest,
     fetchSavedPostsSuccess,
     fetchSavedPostsFailure,
+    updateProfileRequest,
+    updateProfileSuccess,
+    updateProfileFailure,
 } from "./userSlice";
 
 import {
@@ -24,11 +27,12 @@ import {
     getUserPostsApi,
     getUserLikedPostsApi,
     getUserSavedPostsApi,
+    updateProfile,
 } from "../../../service/userService";
 
 import { User } from "./userSlice";
 import { Post } from "../../../types/post.type";
-
+import {UserUpdateRequest } from "../../../types/user.type";
 // Users
 function* handleFetchUsers() {
     try {
@@ -51,13 +55,32 @@ function* handleFetchProfileUser(action: ReturnType<typeof fetchProfileUserReque
             return;
         }
         
-        console.log("🔥 Fetching profile for userId:", userId);
         const user: User = yield call(getUserByIdApi, userId);
         const posts: Post[] = yield call(getUserPostsApi, userId);
+        console.log("Fetched profile user:", user);
+        console.log("Fetched profile posts:", posts);
         yield put(fetchProfileUserSuccess({ user, posts }));
     } catch (error: any) {
         console.error("Fetch profile failed:", error);
         yield put(fetchProfileUserFailure(error.response?.data?.message || "Fetch profile failed"));
+    }
+}
+
+// updaqte profile
+function* handleUpdateProfile(action: ReturnType<typeof updateProfileRequest>) {
+    try {
+        const payload: UserUpdateRequest = action.payload;
+
+        const res: User = yield call(updateProfile, payload);
+        console.log("Updated profile:", res);
+        yield put(updateProfileSuccess(res));
+        
+    } catch (error: any) {
+        yield put(
+            updateProfileFailure(
+                error.response?.data?.message || "Update profile failed"
+            )
+        );
     }
 }
 
@@ -102,4 +125,5 @@ export default function* userSaga() {
     });
     yield takeEvery(fetchLikedPostsRequest.type, handleFetchLikedPosts);
     yield takeEvery(fetchSavedPostsRequest.type, handleFetchSavedPosts);
+    yield takeEvery(updateProfileRequest.type, handleUpdateProfile);
 }
