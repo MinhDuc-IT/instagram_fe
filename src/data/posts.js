@@ -86,29 +86,40 @@ export const posts = [
 ]
 
 export const reels = [
-  {
-    id: 1,
-    userId: 1,
-    username: "john_doe",
-    userAvatar: "https://i.pravatar.cc/150?img=1",
-    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    caption: "Epic mountain adventure! 🏔️",
-    likes: 12345,
-    comments: 234,
-    isLiked: false,
-  },
-  {
-    id: 2,
-    userId: 3,
-    username: "mike_wilson",
-    userAvatar: "https://i.pravatar.cc/150?img=3",
-    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    caption: "Workout motivation 💪",
-    likes: 23456,
-    comments: 456,
-    isLiked: true,
-  },
-]
+    {
+        id: 1,
+        userId: 1,
+        username: 'john_doe',
+        userAvatar: 'https://i.pravatar.cc/150?img=1',
+        video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        caption: 'Epic mountain adventure! 🏔️',
+        likes: 12345,
+        comments: 234,
+        isLiked: false,
+    },
+    {
+        id: 3,
+        userId: 1,
+        username: 'john_doe',
+        userAvatar: 'https://i.pravatar.cc/150?img=1',
+        video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        caption: 'Epic mountain adventure! 🏔️',
+        likes: 12345,
+        comments: 234,
+        isLiked: false,
+    },
+    {
+        id: 2,
+        userId: 3,
+        username: 'mike_wilson',
+        userAvatar: 'https://i.pravatar.cc/150?img=3',
+        video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+        caption: 'Workout motivation 💪',
+        likes: 23456,
+        comments: 456,
+        isLiked: true,
+    },
+];
 
 export const explorePhotos = [
   { id: 1, image: "https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=400", likes: 1234 },
