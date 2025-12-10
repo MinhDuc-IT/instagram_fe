@@ -8,7 +8,6 @@ import {
     MoreHorizontal,
     Volume2,
     VolumeX,
-    Pause,
     Play,
     X,
     Smile,
@@ -16,6 +15,7 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 
 import { likePostRequest } from '../../redux/features/reels/reelsSlice';
+import { DataUtil } from '@/src/utils/DataUtil';
 import 'tippy.js/dist/tippy.css';
 
 export default function ReelCard({
@@ -141,8 +141,10 @@ export default function ReelCard({
     const dispatch = useDispatch();
 
     useEffect(() => {
+        console.log('Reel ID changed:', reel.id);
         setShowComments(false);
     }, [reel.id]);
+        console.log('Reel ID changed:', reel.id);
 
     const handleLike = (reel: any) => {
         setIsLiked((prev: boolean) => !prev);
@@ -165,7 +167,7 @@ export default function ReelCard({
             <div className="relative w-full max-w-[420px] h-[calc(100vh-2rem)] flex items-center justify-center mx-auto rounded-lg">
                 <video
                     ref={videoRef}
-                    src={reel?.video || ''}
+                    src={reel?.video?.secureUrl || reel?.video?.url || ''}
                     loop
                     playsInline
                     className="object-contain w-full h-full rounded-lg"
@@ -193,19 +195,19 @@ export default function ReelCard({
                     <div className="absolute z-10 bottom-20 left-4 right-20">
                         <div className="flex items-center gap-2 mb-3">
                             <img
-                                src={reel.userAvatar || '/placeholder.svg'}
-                                alt={reel.username}
+                                src={reel?.User?.avatar || '/placeholder.svg'}
+                                alt={reel?.User?.userName}
                                 className="w-8 h-8 rounded-full object-cover"
                             />
-                            <span className="text-white font-semibold">{reel.username}</span>
+                            <span className="text-white font-semibold">{reel?.User?.userName || "No-Name"}</span>
                             <button
                                 onClick={() => handleClickFollow()}
-                                className="text-white border border-white rounded-[6px] px-3 py-1 rounded-md text-sm font-semibold"
+                                className="text-white border border-white rounded-[7px] px-3 py-1 rounded-md text-sm font-semibold"
                             >
                                 Follow
                             </button>
                         </div>
-                        <p className="text-white text-sm">{reel.caption}</p>
+                        <p className="text-white text-sm">{reel?.caption}</p>
                     </div>
 
                     {/* Right Actions */}
@@ -219,9 +221,10 @@ export default function ReelCard({
                                 className={`w-7 h-7 ${isLiked ? 'text-[#fc323e]' : 'text-black'}`}
                                 fill={isLiked ? '#fc323e' : 'none'}
                             />
-                            <span className="text-black text-xs mt-1">{reel.likes.toLocaleString()}</span>
+                            <span className="text-black text-xs mt-1">{reel?.likesCount?.toLocaleString?.() || 0}</span>
                         </button>
                         <Tippy
+                            key={reel.id}
                             visible={showComments}
                             interactive
                             placement="right"
@@ -284,7 +287,9 @@ export default function ReelCard({
                                                                 <span className="font-semibold text-sm">
                                                                     {c.username}
                                                                 </span>
-                                                                <span className='ml-[5px] text-gray-500 text-xs'>2h</span>
+                                                                <span className="ml-[5px] text-gray-500 text-xs">
+                                                                    2h
+                                                                </span>
                                                                 <p className="text-sm mt-1">{c.text}</p>
                                                                 <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                                                                     <span>{c.likes || 0} likes</span>
@@ -352,7 +357,9 @@ export default function ReelCard({
                         >
                             <button onClick={() => handleClickComment(reel)} className="flex flex-col items-center">
                                 <MessageCircle className="w-7 h-7 text-black" />
-                                <span className="text-black text-xs mt-1">{reel.comments}</span>
+                                <span className="text-black text-xs mt-1">
+                                    {reel?.commentsCount?.toLocaleString?.() || 0}
+                                </span>
                             </button>
                         </Tippy>
                         <button className="flex flex-col items-center">

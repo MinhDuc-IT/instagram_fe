@@ -56,6 +56,7 @@ export const PostService = {
             throw error;
         }
     },
+    
     async like(postId: string | number) {
         try {
             const res = await axios.post(`post/${postId}/like`);
