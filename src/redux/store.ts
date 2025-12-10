@@ -7,11 +7,13 @@ import rootSaga from './rootSaga';
 import usersReducer from './features/user/userSlice';
 import authReducer from './features/auth/authSlice';
 import themeReducer from './features/theme/themeSlice';
+import messageReducer from './features/message/messageSlice';
 
 const rootReducer = combineReducers({
   users: usersReducer,
   auth: authReducer,
   theme: themeReducer,
+  message: messageReducer,
 });
 
 const persistConfig: PersistConfig<ReturnType<typeof rootReducer>> = {
