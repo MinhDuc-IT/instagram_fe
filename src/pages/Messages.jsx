@@ -8,6 +8,7 @@ import {
     fetchMessagesRequest,
     markAsReadRequest,
 } from '../redux/features/message/messageSlice';
+import { useSocket } from '../hooks/useSocket';
 import ChatList from '../components/ChatList';
 import MessageBox from '../components/MessageBox';
 
@@ -15,6 +16,9 @@ export default function Messages() {
     const dispatch = useDispatch();
     const { conversations, loading, error } = useSelector((state) => state.message);
     const [selectedChat, setSelectedChat] = useState(null);
+
+    // Initialize socket connection
+    useSocket();
 
     useEffect(() => {
         // Fetch conversations when component mounts
@@ -43,10 +47,10 @@ export default function Messages() {
         unread: conv.unreadCount,
     }));
 
-    return (
-        <div className="h-screen flex">
-            {/* Chat List */}
-            <div className="w-full md:w-96 flex-shrink-0">
+  return (
+    <div className="h-screen flex">
+      {/* Chat List */}
+      <div className="w-full md:w-96 flex-shrink-0">
                 {loading && conversations.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">Đang tải...</div>
                 ) : error ? (
@@ -56,25 +60,25 @@ export default function Messages() {
                 ) : (
                     <ChatList chats={transformedChats} selectedChat={selectedChat} onSelectChat={handleSelectChat} />
                 )}
-            </div>
+      </div>
 
-            {/* Message Box */}
-            <div className="hidden md:flex flex-1">
-                <MessageBox chat={selectedChat} />
-            </div>
+      {/* Message Box */}
+      <div className="hidden md:flex flex-1">
+        <MessageBox chat={selectedChat} />
+      </div>
 
-            {/* Mobile Message Box */}
-            {selectedChat && (
-                <div className="md:hidden fixed inset-0 bg-white dark:bg-black z-50">
-                    <MessageBox chat={selectedChat} />
-                    <button
-                        onClick={() => setSelectedChat(null)}
-                        className="absolute top-4 left-4 text-ig-primary font-semibold"
-                    >
-                        ← Back
-                    </button>
-                </div>
-            )}
+      {/* Mobile Message Box */}
+      {selectedChat && (
+        <div className="md:hidden fixed inset-0 bg-white dark:bg-black z-50">
+          <MessageBox chat={selectedChat} />
+          <button 
+            onClick={() => setSelectedChat(null)} 
+            className="absolute top-4 left-4 text-ig-primary font-semibold"
+          >
+            ← Back
+          </button>
         </div>
+      )}
+    </div>
     );
 }

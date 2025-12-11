@@ -142,9 +142,9 @@ export default function MessageBox({ chat }) {
                 ) : messages.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">Chưa có tin nhắn nào</div>
                 ) : (
-                    messages.map((msg) => (
+                    messages.map((msg, index) => (
                         <div
-                            key={msg.id}
+                            key={`${msg.id}-${msg.conversationId}-${index}`}
                             className={`flex ${isCurrentUser(msg.senderId) ? 'justify-end' : 'justify-start'}`}
                         >
                             <div

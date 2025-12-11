@@ -92,8 +92,10 @@ export const messageSlice = createSlice({
                 // First load or reset
                 state.messages = messages;
             } else {
-                // Load more - prepend old messages
-                state.messages = [...messages, ...state.messages];
+                // Load more - prepend old messages, filter duplicates
+                const existingIds = new Set(state.messages.map((m) => m.id));
+                const newMessages = messages.filter((m) => !existingIds.has(m.id));
+                state.messages = [...newMessages, ...state.messages];
             }
             state.selectedConversationId = conversationId;
             state.hasMoreMessages = hasMore;
@@ -126,7 +128,11 @@ export const messageSlice = createSlice({
             state.error = null;
         },
         sendMessageSuccess: (state, action: PayloadAction<Message>) => {
-            state.messages.push(action.payload);
+            // Check if message already exists (from socket) before adding
+            const exists = state.messages.some((m) => m.id === action.payload.id);
+            if (!exists) {
+                state.messages.push(action.payload);
+            }
             state.loading = false;
             state.error = null;
         },
@@ -138,9 +144,12 @@ export const messageSlice = createSlice({
         // Add new message (from socket.io)
         addNewMessage: (state, action: PayloadAction<Message>) => {
             const message = action.payload;
-            // Add to messages if it's for current conversation
+            // Add to messages if it's for current conversation and not already exists
             if (message.conversationId === state.selectedConversationId) {
-                state.messages.push(message);
+                const exists = state.messages.some((m) => m.id === message.id);
+                if (!exists) {
+                    state.messages.push(message);
+                }
             }
             // Update conversation's last message
             const conversation = state.conversations.find((c) => c.id === message.conversationId);
