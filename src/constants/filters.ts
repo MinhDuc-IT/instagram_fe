@@ -22,3 +22,5 @@ export const ACCEPTED_FILE_TYPES = {
     IMAGE: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
     VIDEO: ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm'],
 };
+
+export const REELS_PAGE_SIZE = 10;
