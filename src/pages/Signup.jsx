@@ -23,6 +23,13 @@ export default function Signup() {
     }
   }, [loading])
 
+  const resetData = () => {
+    setEmail("")
+    setFullName("")
+    setUsername("")
+    setPassword("")
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -37,6 +44,7 @@ export default function Signup() {
         }
         return
       }
+      resetData()
       toast.success("Signup successful! Please verify your email.")
     } catch (error) {
       toast.error("Something went wrong. Please try again.")
