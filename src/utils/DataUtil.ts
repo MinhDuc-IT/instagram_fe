@@ -24,4 +24,32 @@ export class DataUtil {
             return viewCount.toLocaleString();
         }
     }
+
+    public static formatCommentTime(dateString: string): string {
+        console.log('Formatting date string:', dateString);
+        const now = Date.now();
+        const commentDate = new Date(dateString).getTime();
+        const diffMs = now - commentDate;
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffWeeks = Math.floor(diffDays / 7);
+        const diffYears = Math.floor(diffDays / 365);
+
+        console.log('Now:', now, 'Comment:', commentDate, 'Diff:', diffMs);
+
+        if (diffYears > 0) {
+            return `${diffYears}y`;
+        } else if (diffWeeks > 0) {
+            return `${diffWeeks}w`;
+        } else if (diffDays > 0) {
+            return `${diffDays}d`;
+        } else if (diffHours > 0) {
+            return `${diffHours}h`;
+        } else if (diffMinutes > 0) {
+            return `${diffMinutes}m`;
+        } else {
+            return 'now';
+        }
+    }
 }
