@@ -29,6 +29,12 @@ export interface Message {
     updatedAt: string;
 }
 
+// Typing user interface
+export interface TypingUser {
+    userId: string;
+    username: string;
+}
+
 // Message state
 export interface MessageState {
     conversations: Conversation[];
@@ -40,6 +46,7 @@ export interface MessageState {
     selectedConversationId: string | null;
     hasMoreMessages: boolean;
     messagesOffset: number;
+    typingUsers: TypingUser[]; // Users currently typing in selected conversation
 }
 
 const initialState: MessageState = {
@@ -52,6 +59,7 @@ const initialState: MessageState = {
     selectedConversationId: null,
     hasMoreMessages: false,
     messagesOffset: 0,
+    typingUsers: [],
 };
 
 // Slice
@@ -116,6 +124,7 @@ export const messageSlice = createSlice({
             state.messages = [];
             state.messagesOffset = 0;
             state.hasMoreMessages = false;
+            state.typingUsers = []; // Clear typing users when switching conversation
             const conversation = state.conversations.find((c) => c.id === action.payload);
             if (conversation) {
                 state.currentConversation = conversation;
@@ -201,6 +210,29 @@ export const messageSlice = createSlice({
             state.currentConversation = null;
             state.messagesOffset = 0;
             state.hasMoreMessages = false;
+            state.typingUsers = [];
+        },
+
+        // Set typing user
+        setTypingUser: (state, action: PayloadAction<{ conversationId: string; user: TypingUser }>) => {
+            if (action.payload.conversationId === state.selectedConversationId) {
+                const exists = state.typingUsers.some((u) => u.userId === action.payload.user.userId);
+                if (!exists) {
+                    state.typingUsers.push(action.payload.user);
+                }
+            }
+        },
+
+        // Clear typing user
+        clearTypingUser: (state, action: PayloadAction<{ conversationId: string; userId: string }>) => {
+            if (action.payload.conversationId === state.selectedConversationId) {
+                state.typingUsers = state.typingUsers.filter((u) => u.userId !== action.payload.userId);
+            }
+        },
+
+        // Clear all typing users (when conversation changes)
+        clearAllTypingUsers: (state) => {
+            state.typingUsers = [];
         },
     },
 });
@@ -222,6 +254,9 @@ export const {
     addNewMessage,
     updateConversation,
     clearMessages,
+    setTypingUser,
+    clearTypingUser,
+    clearAllTypingUsers,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

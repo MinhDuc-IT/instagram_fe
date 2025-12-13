@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getSocket, disconnectSocket } from '../utils/socket';
-import { addNewMessage, updateConversation } from '../redux/features/message/messageSlice';
+import { addNewMessage, updateConversation, setTypingUser, clearTypingUser } from '../redux/features/message/messageSlice';
 import { Message, Conversation } from '../redux/features/message/messageSlice';
 
 export const useSocket = () => {
     const dispatch = useDispatch();
-    const { selectedConversationId } = useSelector((state: any) => state.message);
+    const { selectedConversationId, conversations } = useSelector((state: any) => state.message);
     const { isAuthenticated, accessToken, user } = useSelector((state: any) => state.auth);
     const socketRef = useRef<any>(null);
     const joinedRoomsRef = useRef<Set<string>>(new Set());
@@ -46,16 +46,41 @@ export const useSocket = () => {
             // This will be handled by the conversation list refresh
         };
 
+        // Listen for typing events
+        const handleUserTyping = (data: { conversationId: string; userId: string; isTyping: boolean }) => {
+            console.log('User typing:', data);
+            // Skip if it's from current user
+            if (user?.id && data.userId === user.id.toString()) {
+                return;
+            }
+            
+            if (data.isTyping) {
+                // Get user info from conversations
+                const conversation = conversations?.find((c) => c.id === data.conversationId);
+                if (conversation) {
+                    const typingUser = {
+                        userId: data.userId,
+                        username: conversation.participant.username,
+                    };
+                    dispatch(setTypingUser({ conversationId: data.conversationId, user: typingUser }));
+                }
+            } else {
+                dispatch(clearTypingUser({ conversationId: data.conversationId, userId: data.userId }));
+            }
+        };
+
         socket.on('new_message', handleNewMessage);
         socket.on('messages_read', handleMessagesRead);
+        socket.on('user_typing', handleUserTyping);
 
         return () => {
             if (socket) {
                 socket.off('new_message', handleNewMessage);
                 socket.off('messages_read', handleMessagesRead);
+                socket.off('user_typing', handleUserTyping);
             }
         };
-    }, [isAuthenticated, accessToken, dispatch]);
+    }, [isAuthenticated, accessToken, dispatch, selectedConversationId, conversations, user]);
 
     // Join/leave conversation rooms
     useEffect(() => {

@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Send, Heart, MessageCircle } from 'lucide-react';
-import { fetchMessagesRequest, sendMessageRequest } from '../redux/features/message/messageSlice';
+import { fetchMessagesRequest, sendMessageRequest, clearAllTypingUsers } from '../redux/features/message/messageSlice';
+import { getSocket } from '../utils/socket';
 
 export default function MessageBox({ chat }) {
     const dispatch = useDispatch();
-    const { messages, loading, loadingMore, hasMoreMessages, selectedConversationId } = useSelector(
+    const { messages, loading, loadingMore, hasMoreMessages, selectedConversationId, typingUsers } = useSelector(
         (state) => state.message,
     );
     const { user } = useSelector((state) => state.auth);
@@ -18,6 +19,8 @@ export default function MessageBox({ chat }) {
     const isLoadingMoreRef = useRef(false);
     const previousConversationIdRef = useRef(null);
     const shouldScrollToBottomRef = useRef(false);
+    const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
 
     // Scroll to bottom function
     const scrollToBottom = useCallback((instant = false) => {
@@ -98,12 +101,72 @@ export default function MessageBox({ chat }) {
         }
     }, [loadingMore]);
 
+    // Handle typing events
+    const handleTyping = useCallback(() => {
+        if (!selectedConversationId) return;
+
+        const socket = getSocket();
+        if (!socket) return;
+
+        // Emit typing_start if not already typing
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
+            socket.emit('typing_start', { conversationId: selectedConversationId });
+        }
+
+        // Clear existing timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Emit typing_stop after 3 seconds of no typing
+        typingTimeoutRef.current = setTimeout(() => {
+            if (isTypingRef.current) {
+                isTypingRef.current = false;
+                socket.emit('typing_stop', { conversationId: selectedConversationId });
+            }
+        }, 3000);
+    }, [selectedConversationId]);
+
+    // Stop typing when message is sent
+    const stopTyping = useCallback(() => {
+        if (!selectedConversationId) return;
+
+        const socket = getSocket();
+        if (!socket) return;
+
+        if (isTypingRef.current) {
+            isTypingRef.current = false;
+            socket.emit('typing_stop', { conversationId: selectedConversationId });
+        }
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = null;
+        }
+    }, [selectedConversationId]);
+
+    // Clear typing when conversation changes
+    useEffect(() => {
+        dispatch(clearAllTypingUsers());
+        stopTyping();
+        return () => {
+            stopTyping();
+        };
+    }, [selectedConversationId, dispatch, stopTyping]);
+
     const handleSend = (e) => {
         e.preventDefault();
         if (!message.trim() || !selectedConversationId) return;
 
+        stopTyping();
         dispatch(sendMessageRequest({ conversationId: selectedConversationId, content: message }));
         setMessage('');
+    };
+
+    const handleMessageChange = (e) => {
+        setMessage(e.target.value);
+        handleTyping();
     };
 
     if (!chat) {
@@ -167,6 +230,25 @@ export default function MessageBox({ chat }) {
                         </div>
                     ))
                 )}
+                {/* Typing indicator */}
+                {typingUsers.length > 0 && (
+                    <div className="flex justify-start">
+                        <div className="max-w-xs px-4 py-2 rounded-full bg-gray-200 dark:bg-gray-800">
+                            <div className="flex items-center gap-1">
+                                {/* <p className="text-sm text-gray-500 italic">
+                                    {typingUsers.length === 1
+                                        ? `${typingUsers[0].username} `
+                                        : `${typingUsers.length} người `}
+                                </p> */}
+                                <div className="flex items-center gap-1">
+                                    <span className="typing-dot typing-dot-1" />
+                                    <span className="typing-dot typing-dot-2" />
+                                    <span className="typing-dot typing-dot-3" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div ref={messagesEndRef} />
             </div>
 
@@ -177,7 +259,7 @@ export default function MessageBox({ chat }) {
                         type="text"
                         placeholder="Message..."
                         value={message}
-                        onChange={(e) => setMessage(e.target.value)}
+                        onChange={handleMessageChange}
                         className="flex-1 input-field"
                     />
                     <button type="button" className="p-2 hover:text-gray-500 transition-colors">
