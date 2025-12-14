@@ -17,11 +17,11 @@ export default function Messages() {
     const { conversations, loading, error } = useSelector((state) => state.message);
     const [selectedChat, setSelectedChat] = useState(null);
 
-    // Initialize socket connection
+    // Khởi tạo kết nối socket
     useSocket();
 
     useEffect(() => {
-        // Fetch conversations when component mounts
+        // Lấy danh sách cuộc hội thoại khi component được mount
         dispatch(fetchConversationsRequest());
     }, [dispatch]);
 
@@ -29,14 +29,14 @@ export default function Messages() {
         setSelectedChat(chat);
         if (chat?.id) {
             dispatch(selectConversation(chat.id));
-            // Mark messages as read when selecting a conversation
+            // Đánh dấu tin nhắn là đã đọc khi chọn cuộc hội thoại
             dispatch(markAsReadRequest(chat.id));
-            // Fetch messages when selecting a conversation
+            // Lấy tin nhắn khi chọn cuộc hội thoại
             dispatch(fetchMessagesRequest({ conversationId: chat.id, reset: true }));
         }
     };
 
-    // Transform conversations to match ChatList expected format
+    // Chuyển đổi cuộc hội thoại để khớp với định dạng mong đợi của ChatList
     const transformedChats = conversations.map((conv) => ({
         id: conv.id,
         username: conv.participant.username,
@@ -47,10 +47,10 @@ export default function Messages() {
         unread: conv.unreadCount,
     }));
 
-  return (
-    <div className="h-screen flex">
-      {/* Chat List */}
-      <div className="w-full md:w-96 flex-shrink-0">
+    return (
+        <div className="h-screen flex">
+            {/* Danh sách cuộc trò chuyện */}
+            <div className="w-full md:w-96 flex-shrink-0">
                 {loading && conversations.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">Đang tải...</div>
                 ) : error ? (
@@ -60,25 +60,25 @@ export default function Messages() {
                 ) : (
                     <ChatList chats={transformedChats} selectedChat={selectedChat} onSelectChat={handleSelectChat} />
                 )}
-      </div>
+            </div>
 
-      {/* Message Box */}
-      <div className="hidden md:flex flex-1">
-        <MessageBox chat={selectedChat} />
-      </div>
+            {/* Hộp tin nhắn */}
+            <div className="hidden md:flex flex-1">
+                <MessageBox chat={selectedChat} />
+            </div>
 
-      {/* Mobile Message Box */}
-      {selectedChat && (
-        <div className="md:hidden fixed inset-0 bg-white dark:bg-black z-50">
-          <MessageBox chat={selectedChat} />
-          <button 
-            onClick={() => setSelectedChat(null)} 
-            className="absolute top-4 left-4 text-ig-primary font-semibold"
-          >
-            ← Back
-          </button>
+            {/* Hộp tin nhắn trên mobile */}
+            {selectedChat && (
+                <div className="md:hidden fixed inset-0 bg-white dark:bg-black z-50">
+                    <MessageBox chat={selectedChat} />
+                    <button
+                        onClick={() => setSelectedChat(null)}
+                        className="absolute top-4 left-4 text-ig-primary font-semibold"
+                    >
+                        ← Back
+                    </button>
+                </div>
+            )}
         </div>
-      )}
-    </div>
     );
 }

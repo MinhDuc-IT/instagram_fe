@@ -1,6 +1,6 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-// Conversation interface
+// Interface cho cuộc trò chuyện
 export interface Conversation {
     id: string;
     participant: {
@@ -19,7 +19,7 @@ export interface Conversation {
     updatedAt: string;
 }
 
-// Message interface
+// Interface cho tin nhắn
 export interface Message {
     id: string;
     conversationId: string;
@@ -29,7 +29,7 @@ export interface Message {
     updatedAt: string;
 }
 
-// Typing user interface
+// Interface cho người dùng đang gõ
 export interface TypingUser {
     userId: string;
     username: string;
@@ -46,7 +46,7 @@ export interface MessageState {
     selectedConversationId: string | null;
     hasMoreMessages: boolean;
     messagesOffset: number;
-    typingUsers: TypingUser[]; // Users currently typing in selected conversation
+    typingUsers: TypingUser[]; // Người dùng đang gõ trong cuộc trò chuyện được chọn
 }
 
 const initialState: MessageState = {
@@ -64,10 +64,10 @@ const initialState: MessageState = {
 
 // Slice
 export const messageSlice = createSlice({
-    name: "message",
+    name: 'message',
     initialState,
     reducers: {
-        // Fetch conversations
+        // Lấy danh sách cuộc trò chuyện
         fetchConversationsRequest: (state) => {
             state.loading = true;
             state.error = null;
@@ -82,7 +82,7 @@ export const messageSlice = createSlice({
             state.error = action.payload;
         },
 
-        // Fetch messages for a conversation
+        // Lấy tin nhắn cho một cuộc trò chuyện
         fetchMessagesRequest: (state, _action: PayloadAction<{ conversationId: string; reset?: boolean }>) => {
             const { reset } = _action.payload;
             if (reset) {
@@ -94,13 +94,16 @@ export const messageSlice = createSlice({
             }
             state.error = null;
         },
-        fetchMessagesSuccess: (state, action: PayloadAction<{ conversationId: string; messages: Message[]; hasMore: boolean; offset: number }>) => {
+        fetchMessagesSuccess: (
+            state,
+            action: PayloadAction<{ conversationId: string; messages: Message[]; hasMore: boolean; offset: number }>,
+        ) => {
             const { conversationId, messages, hasMore, offset } = action.payload;
             if (state.messagesOffset === 0) {
-                // First load or reset
+                // Lần tải đầu hoặc reset
                 state.messages = messages;
             } else {
-                // Load more - prepend old messages, filter duplicates
+                // Tải thêm - thêm tin nhắn cũ vào đầu, lọc trùng lặp
                 const existingIds = new Set(state.messages.map((m) => m.id));
                 const newMessages = messages.filter((m) => !existingIds.has(m.id));
                 state.messages = [...newMessages, ...state.messages];
@@ -118,26 +121,26 @@ export const messageSlice = createSlice({
             state.error = action.payload;
         },
 
-        // Select conversation
+        // Chọn cuộc trò chuyện
         selectConversation: (state, action: PayloadAction<string>) => {
             state.selectedConversationId = action.payload;
             state.messages = [];
             state.messagesOffset = 0;
             state.hasMoreMessages = false;
-            state.typingUsers = []; // Clear typing users when switching conversation
+            state.typingUsers = []; // Xóa người dùng đang gõ khi chuyển cuộc trò chuyện
             const conversation = state.conversations.find((c) => c.id === action.payload);
             if (conversation) {
                 state.currentConversation = conversation;
             }
         },
 
-        // Send message
+        // Gửi tin nhắn
         sendMessageRequest: (state, _action: PayloadAction<{ conversationId: string; content: string }>) => {
             state.loading = true;
             state.error = null;
         },
         sendMessageSuccess: (state, action: PayloadAction<Message>) => {
-            // Check if message already exists (from socket) before adding
+            // Kiểm tra xem tin nhắn đã tồn tại chưa (từ socket) trước khi thêm
             const exists = state.messages.some((m) => m.id === action.payload.id);
             if (!exists) {
                 state.messages.push(action.payload);
@@ -150,17 +153,17 @@ export const messageSlice = createSlice({
             state.error = action.payload;
         },
 
-        // Add new message (from socket.io)
+        // Thêm tin nhắn mới (từ socket.io)
         addNewMessage: (state, action: PayloadAction<Message>) => {
             const message = action.payload;
-            // Add to messages if it's for current conversation and not already exists
+            // Thêm vào tin nhắn nếu thuộc cuộc trò chuyện hiện tại và chưa tồn tại
             if (message.conversationId === state.selectedConversationId) {
                 const exists = state.messages.some((m) => m.id === message.id);
                 if (!exists) {
                     state.messages.push(message);
                 }
             }
-            // Update conversation's last message
+            // Cập nhật tin nhắn cuối của cuộc trò chuyện
             const conversation = state.conversations.find((c) => c.id === message.conversationId);
             if (conversation) {
                 conversation.lastMessage = {
@@ -170,15 +173,12 @@ export const messageSlice = createSlice({
                     createdAt: message.createdAt,
                 };
                 conversation.updatedAt = message.createdAt;
-                // Move conversation to top
-                state.conversations = [
-                    conversation,
-                    ...state.conversations.filter((c) => c.id !== conversation.id),
-                ];
+                // Di chuyển cuộc trò chuyện lên đầu
+                state.conversations = [conversation, ...state.conversations.filter((c) => c.id !== conversation.id)];
             }
         },
 
-        // Update conversation (from socket.io)
+        // Cập nhật cuộc trò chuyện (từ socket.io)
         updateConversation: (state, action: PayloadAction<Conversation>) => {
             const index = state.conversations.findIndex((c) => c.id === action.payload.id);
             if (index !== -1) {
@@ -188,22 +188,22 @@ export const messageSlice = createSlice({
             }
         },
 
-        // Mark messages as read
+        // Đánh dấu tin nhắn đã đọc
         markAsReadRequest: (state, _action: PayloadAction<string>) => {
-            // No loading state needed for this
+            // Không cần trạng thái loading cho hành động này
         },
         markAsReadSuccess: (state, action: PayloadAction<{ conversationId: string; readCount: number }>) => {
-            // Update unread count in conversation
+            // Cập nhật số lượng tin nhắn chưa đọc trong cuộc trò chuyện
             const conversation = state.conversations.find((c) => c.id === action.payload.conversationId);
             if (conversation) {
                 conversation.unreadCount = Math.max(0, conversation.unreadCount - action.payload.readCount);
             }
         },
         markAsReadFailure: (state, _action: PayloadAction<string>) => {
-            // Silent failure, don't show error
+            // Lỗi im lặng, không hiển thị lỗi
         },
 
-        // Clear messages
+        // Xóa tin nhắn
         clearMessages: (state) => {
             state.messages = [];
             state.selectedConversationId = null;
@@ -213,7 +213,7 @@ export const messageSlice = createSlice({
             state.typingUsers = [];
         },
 
-        // Set typing user
+        // Đặt người dùng đang gõ
         setTypingUser: (state, action: PayloadAction<{ conversationId: string; user: TypingUser }>) => {
             if (action.payload.conversationId === state.selectedConversationId) {
                 const exists = state.typingUsers.some((u) => u.userId === action.payload.user.userId);
@@ -223,14 +223,14 @@ export const messageSlice = createSlice({
             }
         },
 
-        // Clear typing user
+        // Xóa người dùng đang gõ
         clearTypingUser: (state, action: PayloadAction<{ conversationId: string; userId: string }>) => {
             if (action.payload.conversationId === state.selectedConversationId) {
                 state.typingUsers = state.typingUsers.filter((u) => u.userId !== action.payload.userId);
             }
         },
 
-        // Clear all typing users (when conversation changes)
+        // Xóa tất cả người dùng đang gõ (khi cuộc trò chuyện thay đổi)
         clearAllTypingUsers: (state) => {
             state.typingUsers = [];
         },
@@ -260,4 +260,3 @@ export const {
 } = messageSlice.actions;
 
 export default messageSlice.reducer;
-

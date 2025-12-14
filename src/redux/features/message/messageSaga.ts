@@ -21,7 +21,7 @@ import {
 } from '../../../service/messageService';
 import { Conversation, Message } from './messageSlice';
 
-// Fetch conversations
+// Lấy danh sách cuộc trò chuyện
 function* handleFetchConversations() {
     try {
         const res: Conversation[] = yield call(getConversationsApi);
@@ -31,7 +31,7 @@ function* handleFetchConversations() {
     }
 }
 
-// Fetch messages for a conversation
+// Lấy tin nhắn cho một cuộc trò chuyện
 function* handleFetchMessages(action: ReturnType<typeof fetchMessagesRequest>) {
     try {
         const { conversationId, reset } = action.payload;
@@ -61,7 +61,7 @@ function* handleFetchMessages(action: ReturnType<typeof fetchMessagesRequest>) {
     }
 }
 
-// Send message
+// Gửi tin nhắn
 function* handleSendMessage(action: ReturnType<typeof sendMessageRequest>) {
     try {
         const { conversationId, content } = action.payload;
@@ -72,14 +72,14 @@ function* handleSendMessage(action: ReturnType<typeof sendMessageRequest>) {
     }
 }
 
-// Mark messages as read
+// Đánh dấu tin nhắn đã đọc
 function* handleMarkAsRead(action: ReturnType<typeof markAsReadRequest>) {
     try {
         const conversationId = action.payload;
         const res: { success: boolean; readCount: number } = yield call(markMessagesAsReadApi, conversationId);
         yield put(markAsReadSuccess({ conversationId, readCount: res.readCount }));
     } catch (error: any) {
-        // Silent failure - don't show error to user
+        // Lỗi im lặng - không hiển thị lỗi cho người dùng
         yield put(markAsReadFailure(error.response?.data?.message || 'Đánh dấu đã đọc thất bại'));
     }
 }

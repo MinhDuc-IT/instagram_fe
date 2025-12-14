@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getSocket, disconnectSocket } from '../utils/socket';
-import { addNewMessage, updateConversation, setTypingUser, clearTypingUser } from '../redux/features/message/messageSlice';
+import {
+    addNewMessage,
+    updateConversation,
+    setTypingUser,
+    clearTypingUser,
+} from '../redux/features/message/messageSlice';
 import { Message, Conversation } from '../redux/features/message/messageSlice';
 
 export const useSocket = () => {
@@ -23,40 +28,40 @@ export const useSocket = () => {
 
         socketRef.current = socket;
 
-        // Listen for new messages
+        // Lắng nghe tin nhắn mới
         const handleNewMessage = (message: Message) => {
             console.log('New message received:', message);
-            // Only add message if it's not from current user (to avoid duplicate from sendMessageSuccess)
-            // Or if it's from current user but not in current conversation (other device/tab)
+            // Chỉ thêm tin nhắn nếu không phải từ người dùng hiện tại (để tránh trùng với sendMessageSuccess)
+            // Hoặc nếu từ người dùng hiện tại nhưng không phải cuộc trò chuyện hiện tại (thiết bị/tab khác)
             const isFromCurrentUser = user?.id && message.senderId === user.id.toString();
             const isCurrentConversation = message.conversationId === selectedConversationId;
-            
-            // Add message if:
-            // 1. Not from current user (someone else sent it)
-            // 2. Or from current user but not in current conversation (sent from another device/tab)
+
+            // Thêm tin nhắn nếu:
+            // 1. Không phải từ người dùng hiện tại (người khác gửi)
+            // 2. Hoặc từ người dùng hiện tại nhưng không phải cuộc trò chuyện hiện tại (gửi từ thiết bị/tab khác)
             if (!isFromCurrentUser || !isCurrentConversation) {
                 dispatch(addNewMessage(message));
             }
         };
 
-        // Listen for messages read
+        // Lắng nghe sự kiện đã đọc tin nhắn
         const handleMessagesRead = (data: { conversationId: string; userId: string; readCount: number }) => {
             console.log('Messages read:', data);
-            // Update conversation unread count
-            // This will be handled by the conversation list refresh
+            // Cập nhật số lượng tin nhắn chưa đọc
+            // Sẽ được xử lý bởi việc làm mới danh sách cuộc trò chuyện
         };
 
-        // Listen for typing events
+        // Lắng nghe sự kiện đang gõ
         const handleUserTyping = (data: { conversationId: string; userId: string; isTyping: boolean }) => {
             console.log('User typing:', data);
-            // Skip if it's from current user
+            // Bỏ qua nếu là từ người dùng hiện tại
             if (user?.id && data.userId === user.id.toString()) {
                 return;
             }
-            
+
             if (data.isTyping) {
-                // Get user info from conversations
-                const conversation = conversations?.find((c) => c.id === data.conversationId);
+                // Lấy thông tin người dùng từ danh sách cuộc trò chuyện
+                const conversation = conversations?.find((c: Conversation) => c.id === data.conversationId);
                 if (conversation) {
                     const typingUser = {
                         userId: data.userId,
@@ -82,7 +87,7 @@ export const useSocket = () => {
         };
     }, [isAuthenticated, accessToken, dispatch, selectedConversationId, conversations, user]);
 
-    // Join/leave conversation rooms
+    // Tham gia/rời khỏi phòng cuộc trò chuyện
     useEffect(() => {
         if (!socketRef.current || !selectedConversationId) {
             return;
@@ -91,7 +96,7 @@ export const useSocket = () => {
         const socket = socketRef.current;
         const room = selectedConversationId;
 
-        // Leave previous rooms
+        // Rời khỏi các phòng trước đó
         joinedRoomsRef.current.forEach((prevRoom) => {
             if (prevRoom !== room) {
                 socket.emit('leave_conversation', { conversationId: prevRoom });
@@ -99,7 +104,7 @@ export const useSocket = () => {
             }
         });
 
-        // Join current conversation
+        // Tham gia cuộc trò chuyện hiện tại
         if (!joinedRoomsRef.current.has(room)) {
             socket.emit('join_conversation', { conversationId: room });
             joinedRoomsRef.current.add(room);
@@ -113,12 +118,11 @@ export const useSocket = () => {
         };
     }, [selectedConversationId]);
 
-    // Cleanup on unmount
+    // Dọn dẹp khi component bị unmount
     useEffect(() => {
         return () => {
-            // Don't disconnect socket on unmount, keep it alive
-            // Only disconnect when user logs out
+            // Không ngắt kết nối socket khi unmount, giữ kết nối sống
+            // Chỉ ngắt kết nối khi người dùng đăng xuất
         };
     }, []);
 };
-

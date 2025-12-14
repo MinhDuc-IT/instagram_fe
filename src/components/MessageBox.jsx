@@ -22,16 +22,16 @@ export default function MessageBox({ chat }) {
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
 
-    // Scroll to bottom function
+    // Hàm cuộn xuống cuối
     const scrollToBottom = useCallback((instant = false) => {
         if (messagesContainerRef.current) {
             const container = messagesContainerRef.current;
-            // Scroll to bottom by setting scrollTop to scrollHeight
+            // Cuộn xuống cuối bằng cách đặt scrollTop bằng scrollHeight
             container.scrollTop = container.scrollHeight;
         }
     }, []);
 
-    // Load more messages when scrolling to top
+    // Tải thêm tin nhắn khi cuộn lên đầu
     const handleScroll = useCallback(() => {
         if (!messagesContainerRef.current || isLoadingMoreRef.current || !hasMoreMessages || loadingMore) {
             return;
@@ -40,16 +40,16 @@ export default function MessageBox({ chat }) {
         const container = messagesContainerRef.current;
         const scrollTop = container.scrollTop;
 
-        // Trigger load more when scrolled to top (within 100px)
+        // Kích hoạt tải thêm khi cuộn đến đầu (trong vòng 100px)
         if (scrollTop < 100 && hasMoreMessages && !loadingMore) {
             isLoadingMoreRef.current = true;
             previousScrollHeightRef.current = container.scrollHeight;
-            shouldScrollToBottomRef.current = false; // Don't scroll to bottom when loading more
+            shouldScrollToBottomRef.current = false; // Không cuộn xuống cuối khi đang tải thêm
             dispatch(fetchMessagesRequest({ conversationId: selectedConversationId, reset: false }));
         }
     }, [hasMoreMessages, loadingMore, selectedConversationId, dispatch]);
 
-    // Maintain scroll position after loading more messages
+    // Duy trì vị trí cuộn sau khi tải thêm tin nhắn
     useEffect(() => {
         if (messagesContainerRef.current && isLoadingMoreRef.current && previousScrollHeightRef.current > 0) {
             const container = messagesContainerRef.current;
@@ -61,17 +61,17 @@ export default function MessageBox({ chat }) {
         }
     }, [messages]);
 
-    // Scroll to bottom when conversation changes (initial load)
+    // Cuộn xuống cuối khi cuộc hội thoại thay đổi (tải lần đầu)
     useEffect(() => {
         const conversationChanged = previousConversationIdRef.current !== selectedConversationId;
 
         if (conversationChanged && selectedConversationId) {
             previousConversationIdRef.current = selectedConversationId;
-            shouldScrollToBottomRef.current = true; // Mark that we should scroll to bottom
-            isLoadingMoreRef.current = false; // Reset load more flag
+            shouldScrollToBottomRef.current = true; // Đánh dấu cần cuộn xuống cuối
+            isLoadingMoreRef.current = false; // Đặt lại cờ tải thêm
         }
 
-        // Scroll to bottom when messages are loaded and it's initial load (not load more)
+        // Cuộn xuống cuối khi tin nhắn được tải và là lần tải đầu tiên (không phải tải thêm)
         if (
             shouldScrollToBottomRef.current &&
             messages.length > 0 &&
@@ -80,11 +80,11 @@ export default function MessageBox({ chat }) {
             !isLoadingMoreRef.current &&
             messagesContainerRef.current
         ) {
-            // Wait for DOM to update, then scroll to bottom
+            // Đợi DOM cập nhật, sau đó cuộn xuống cuối
             const timer = setTimeout(() => {
                 if (messagesContainerRef.current) {
                     const container = messagesContainerRef.current;
-                    // Force scroll to bottom
+                    // Buộc cuộn xuống cuối
                     container.scrollTop = container.scrollHeight;
                     shouldScrollToBottomRef.current = false;
                 }
@@ -94,32 +94,32 @@ export default function MessageBox({ chat }) {
         }
     }, [selectedConversationId, loading, messages.length]);
 
-    // Reset loading more flag when loadingMore changes
+    // Đặt lại cờ tải thêm khi loadingMore thay đổi
     useEffect(() => {
         if (!loadingMore) {
             isLoadingMoreRef.current = false;
         }
     }, [loadingMore]);
 
-    // Handle typing events
+    // Xử lý sự kiện đang gõ
     const handleTyping = useCallback(() => {
         if (!selectedConversationId) return;
 
         const socket = getSocket();
         if (!socket) return;
 
-        // Emit typing_start if not already typing
+        // Phát sự kiện typing_start nếu chưa đang gõ
         if (!isTypingRef.current) {
             isTypingRef.current = true;
             socket.emit('typing_start', { conversationId: selectedConversationId });
         }
 
-        // Clear existing timeout
+        // Xóa timeout hiện tại
         if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
         }
 
-        // Emit typing_stop after 3 seconds of no typing
+        // Phát sự kiện typing_stop sau 3 giây không gõ
         typingTimeoutRef.current = setTimeout(() => {
             if (isTypingRef.current) {
                 isTypingRef.current = false;
@@ -128,7 +128,7 @@ export default function MessageBox({ chat }) {
         }, 3000);
     }, [selectedConversationId]);
 
-    // Stop typing when message is sent
+    // Dừng trạng thái đang gõ khi gửi tin nhắn
     const stopTyping = useCallback(() => {
         if (!selectedConversationId) return;
 
@@ -146,7 +146,7 @@ export default function MessageBox({ chat }) {
         }
     }, [selectedConversationId]);
 
-    // Clear typing when conversation changes
+    // Xóa trạng thái đang gõ khi cuộc hội thoại thay đổi
     useEffect(() => {
         dispatch(clearAllTypingUsers());
         stopTyping();
@@ -187,7 +187,7 @@ export default function MessageBox({ chat }) {
 
     return (
         <div className="flex-1 flex flex-col h-full">
-            {/* Header */}
+            {/* Tiêu đề */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3">
                 <img
                     src={chat.avatar || '/placeholder.svg'}
@@ -197,7 +197,7 @@ export default function MessageBox({ chat }) {
                 <span className="font-semibold">{chat.username}</span>
             </div>
 
-            {/* Messages */}
+            {/* Tin nhắn */}
             <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 space-y-4">
                 {loadingMore && <div className="text-center text-gray-500 text-sm py-2">Đang tải thêm...</div>}
                 {loading && messages.length === 0 ? (
@@ -230,7 +230,7 @@ export default function MessageBox({ chat }) {
                         </div>
                     ))
                 )}
-                {/* Typing indicator */}
+                {/* Chỉ báo đang gõ */}
                 {typingUsers.length > 0 && (
                     <div className="flex justify-start">
                         <div className="max-w-xs px-4 py-2 rounded-full bg-gray-200 dark:bg-gray-800">
@@ -252,7 +252,7 @@ export default function MessageBox({ chat }) {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
+            {/* Ô nhập */}
             <form onSubmit={handleSend} className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <div className="flex items-center gap-2">
                     <input

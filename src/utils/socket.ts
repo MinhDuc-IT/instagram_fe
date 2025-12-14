@@ -15,10 +15,10 @@ export const getSocket = (): Socket | null => {
 
         const baseURL = (import.meta as any).env?.VITE_BASE_URL || 'http://localhost:8080';
 
-        // Remove trailing slash if exists
+        // Loại bỏ dấu gạch chéo ở cuối nếu có
         const cleanBaseURL = baseURL.replace(/\/$/, '');
 
-        // Connect to namespace /messages - namespace is part of the URL
+        // Kết nối đến namespace /messages - namespace là một phần của URL
         socket = io(`${cleanBaseURL}/messages`, {
             auth: {
                 token: accessToken,
