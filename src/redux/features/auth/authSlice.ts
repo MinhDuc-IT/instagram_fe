@@ -126,6 +126,11 @@ export const authSlice = createSlice({
         //     state.loading = false;
         //     state.error = action.payload;
         // },
+        setUserAvatar: (state, action: PayloadAction<string>) => {
+            if (state.user) {
+                state.user.avatar = action.payload;
+            }
+        }
     },
 });
 
@@ -139,6 +144,7 @@ export const {
     // updateProfileRequest,
     // updateProfileSuccess,
     // updateProfileFailure,
+    setUserAvatar,
 } = authSlice.actions;
 
 export default authSlice.reducer;

@@ -58,7 +58,7 @@ class UploadService {
             },
         });
 
-        return response.data;
+        return response;
     }
 
     /**

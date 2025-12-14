@@ -23,6 +23,8 @@ export interface Comment {
   updatedAt: string;
 }
 
+export type PostVisibility = "public" | "followers" | "private";
+
 export interface Post {
   id: string;
   userId: number;
@@ -30,7 +32,9 @@ export interface Post {
   userAvatar?: string;
   caption?: string | null;
   location?: string | null;
-  visibility?: string | null;
+  visibility?: PostVisibility | null;
+  isLikesHidden?: boolean;
+  isCommentsDisabled?: boolean;
   media: Media[];
   timestamp?: string; // createdDate từ BE
   likes?: number;

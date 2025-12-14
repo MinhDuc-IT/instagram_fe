@@ -86,4 +86,7 @@ export const PostService = {
             throw error;
         }
     },
+
+    update: (id: string, data: any) =>
+        axios.patch(`/post/${id}`, data),
 };
