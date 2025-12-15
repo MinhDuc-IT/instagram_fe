@@ -32,6 +32,7 @@
     "sass": "latest",
     "sass-embedded": "latest",
     "shadcn": "3.4.2",
+    "socket.io-client": "^4.8.1",
     "stylus": "latest",
     "sugarss": "latest",
     "tailwind-merge": "^2.5.5",

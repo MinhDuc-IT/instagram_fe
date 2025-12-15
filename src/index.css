@@ -86,3 +86,38 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+/* Typing dots animation */
+@keyframes typingBounce {
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.7;
+    }
+    30% {
+        transform: translateY(-10px);
+        opacity: 1;
+    }
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    @apply bg-gray-500 dark:bg-gray-400;
+    animation: typingBounce 1.4s ease-in-out infinite;
+    display: inline-block;
+}
+
+.typing-dot-1 {
+    animation-delay: 0ms;
+}
+
+.typing-dot-2 {
+    animation-delay: 200ms;
+}
+
+.typing-dot-3 {
+    animation-delay: 400ms;
+}
