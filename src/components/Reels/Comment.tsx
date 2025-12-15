@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, Play, X, Smile } from 'lucide-react';
 
 import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
+import { DataUtil } from '../../utils/DataUtil';
 
 type CommentProps = {
     reel: any;
@@ -26,6 +27,13 @@ function Comment({
     const [replyTo, setReplyTo] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
     const [isLiked, setIsLiked] = useState<boolean>(false);
+    const [comments, setComments] = useState<any[]>([]);
+
+    useEffect(() => {
+        setComments(reel.topComments || []);
+    }, [reel.id]);
+
+    console.log('Render Comment component: ', reel);
 
     const fakeComments = [
         {
@@ -203,24 +211,24 @@ function Comment({
 
                         {/* Comments List */}
                         <div className="flex-1 overflow-y-auto px-4 py-2">
-                            {fakeComments?.length > 0 ? (
-                                fakeComments.map((c: any, idx: number) => (
+                            {comments?.length > 0 ? (
+                                comments.map((c: any, idx: number) => (
                                     <div key={idx} className="flex gap-3 py-3">
                                         <img
-                                            src={c.userAvatar || `https://i.pravatar.cc/150?img=${idx + 10}`}
-                                            alt={c.username}
+                                            src={c?.User?.avatar || `https://i.pravatar.cc/150?img=${idx + 10}`}
+                                            alt={c?.User?.userName || 'User avatar'}
                                             className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                                         />
                                         <div className="flex-1">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex-1">
-                                                    <span className="font-semibold text-sm">{c.username}</span>
-                                                    <span className="ml-[5px] text-gray-500 text-xs">2h</span>
-                                                    <p className="text-sm mt-1">{c.text}</p>
+                                                    <span className="font-semibold text-sm">{c?.User?.userName}</span>
+                                                    <span className="ml-[5px] text-gray-500 text-xs">{DataUtil.formatCommentTime(c?.createdAt)}</span>
+                                                    <p className="text-sm mt-1">{c?.content}</p>
                                                     <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                                                         <span>{c.likes || 0} likes</span>
                                                         <button
-                                                            onClick={() => handleReplyComment(c.username)}
+                                                            onClick={() => handleReplyComment(c?.User?.userName)}
                                                             className="font-semibold"
                                                         >
                                                             Reply
@@ -228,7 +236,10 @@ function Comment({
                                                     </div>
                                                 </div>
                                                 <button onClick={() => handleLikeComment()} className="p-1">
-                                                    <Heart className={`w-4 h-4 ${isLiked ? 'text-[#fc323e]' : 'text-black'}`} fill={isLiked ? '#fc323e' : 'none'} />
+                                                    <Heart
+                                                        className={`w-4 h-4 ${isLiked ? 'text-[#fc323e]' : 'text-black'}`}
+                                                        fill={isLiked ? '#fc323e' : 'none'}
+                                                    />
                                                 </button>
                                             </div>
 
