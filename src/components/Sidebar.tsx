@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Compass, Film, MessageCircle, Heart, PlusSquare, LogOut } from "lucide-react";
+import { Home, Compass, Clapperboard, Film, MessageCircle, Heart, PlusSquare, LogOut } from 'lucide-react';
 import { useDispatch, useSelector } from "react-redux";
 import { logoutRequest } from "../redux/features/auth/authSlice";
 import ThemeToggle from "./ThemeToggle";

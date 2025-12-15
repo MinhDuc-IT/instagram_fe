@@ -1,6 +1,6 @@
-import axios from "../utils/axiosCustomize";
-import { AxiosResponse } from "axios";
-import { LoginResponse } from "../redux/features/auth/authSlice";
+import axios from '../utils/axiosCustomize';
+import { AxiosResponse } from 'axios';
+import { LoginResponse } from '../redux/features/auth/authSlice';
 
 // Input DTOs
 export interface RegisterUserDTO {
@@ -17,11 +17,11 @@ export interface LoginUserDTO {
 
 // API calls
 const registerNewUser = (userData: RegisterUserDTO): Promise<AxiosResponse<any>> => {
-    return axios.post("/auth/register", userData);
+    return axios.post('/auth/register', userData);
 };
 
 const loginUser = (loginUserDTO: LoginUserDTO): Promise<AxiosResponse<LoginResponse>> => {
-    return axios.post<LoginResponse>("/auth/login", loginUserDTO);
+    return axios.post<LoginResponse>('/auth/login', loginUserDTO);
 };
 
 const loginWithFacebook = () => {
@@ -30,7 +30,7 @@ const loginWithFacebook = () => {
 
 const logoutUser = () => {
     return axios.post('/auth/logout');
-}
+};
 
 const checkTokenLogin = (userId: number, tokenLogin: string) => {
     return axios.get(`/auth/checkTokenLogin?userId=${userId}&tokenLogin=${tokenLogin}`);
@@ -38,6 +38,10 @@ const checkTokenLogin = (userId: number, tokenLogin: string) => {
 
 const verifyEmail = (token: string) => {
     return axios.post('/auth/verify', { token });
-}
+};
 
-export { registerNewUser, verifyEmail, loginUser, logoutUser, loginWithFacebook, checkTokenLogin };
+const resendVerification = (email: string): Promise<AxiosResponse<{ success: boolean; message: string }>> => {
+    return axios.post('/auth/resend-verification', { email });
+};
+
+export { registerNewUser, verifyEmail, resendVerification, loginUser, logoutUser, loginWithFacebook, checkTokenLogin };
