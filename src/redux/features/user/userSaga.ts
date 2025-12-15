@@ -33,6 +33,7 @@ import {
 import { User } from "./userSlice";
 import { Post } from "../../../types/post.type";
 import {UserUpdateRequest } from "../../../types/user.type";
+import { setUserAvatar } from "../auth/authSlice";
 // Users
 function* handleFetchUsers() {
     try {
@@ -74,7 +75,7 @@ function* handleUpdateProfile(action: ReturnType<typeof updateProfileRequest>) {
         const res: User = yield call(updateProfile, payload);
         console.log("Updated profile:", res);
         yield put(updateProfileSuccess(res));
-        
+        yield put(setUserAvatar(res.avatar ?? ''));
     } catch (error: any) {
         yield put(
             updateProfileFailure(

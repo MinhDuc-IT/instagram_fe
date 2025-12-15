@@ -1,5 +1,8 @@
 export interface UploadResponse {
     success: boolean;
+    id: string;
+    type: 'image' | 'video';
+    fileName: string;
     publicId: string;
     url: string;
     secureUrl: string;

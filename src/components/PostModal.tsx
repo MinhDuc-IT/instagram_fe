@@ -1,10 +1,12 @@
 "use client";
-import { X, ChevronLeft, ChevronRight, Heart, MessageCircle, Bookmark } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Heart, MessageCircle, Bookmark, MoreHorizontal } from "lucide-react";
 import React, { useEffect, useState, useRef } from "react";
 import { Post } from "../types/post.type";
 import { PostService } from "../service/postService";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { toggleLikePost, toggleSavePost, addCommentToPost } from "../redux/features/user/userSlice";
+import PostEditModal from "./PostEditModal";
+import { RootState, AppDispatch } from "../redux/store";
 
 interface PostModalProps {
     post: Post;
@@ -18,6 +20,9 @@ export default function PostModal({ post, onClose }: PostModalProps) {
     const [commentText, setCommentText] = useState("");
     const [animating, setAnimating] = useState(true);
     const mountedRef = useRef(false);
+    const [edit, setEdit] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+    const { user: currentUser } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
         mountedRef.current = true;
@@ -55,7 +60,7 @@ export default function PostModal({ post, onClose }: PostModalProps) {
     const prev = () => setCurrentIndex((s) => (s - 1 + (p.media?.length || 1)) % (p.media?.length || 1));
     const next = () => setCurrentIndex((s) => (s + 1) % (p.media?.length || 1));
 
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
 
     const toggleLike = async () => {
         if (!p) return;
@@ -131,7 +136,7 @@ export default function PostModal({ post, onClose }: PostModalProps) {
         }
     };
 
-    // Use lucide-react icons (Heart/MessageCircle/Bookmark) for actions
+    const isOwner = String(p.userId) === String(currentUser?.id);
 
     return (
         <div
@@ -190,10 +195,40 @@ export default function PostModal({ post, onClose }: PostModalProps) {
                                 <span className="text-xs text-gray-500">{new Date(p.timestamp || Date.now()).toLocaleString()}</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="relative flex items-center gap-2">
+                            {isOwner && (
+                                <button
+                                    className="p-1"
+                                    onClick={() => setShowMenu(v => !v)}
+                                >
+                                    <MoreHorizontal />
+                                </button>
+                            )}
+
                             <button className="p-1" onClick={onClose} aria-label="Close">
                                 <X />
                             </button>
+
+                            {/* Dropdown menu */}
+                            {showMenu && (
+                                <div className="absolute right-0 top-10 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50">
+                                    <button
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        onClick={() => {
+                                            setEdit(true);
+                                            setShowMenu(false);
+                                        }}
+                                    >
+                                        Edit post
+                                    </button>
+
+                                    <button
+                                        className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    >
+                                        Delete post
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -254,6 +289,12 @@ export default function PostModal({ post, onClose }: PostModalProps) {
                     </div>
                 </div>
             </div>
+            {edit && (
+                <PostEditModal
+                    post={p}
+                    onClose={() => setEdit(false)}
+                />
+            )}
         </div>
     );
 }
