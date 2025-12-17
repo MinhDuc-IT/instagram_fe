@@ -26,7 +26,7 @@ export class DataUtil {
     }
 
     public static formatCommentTime(dateString: string): string {
-        console.log('Formatting date string:', dateString);
+        // console.log('Formatting date string:', dateString);
         const now = Date.now();
         const commentDate = new Date(dateString).getTime();
         const diffMs = now - commentDate;
@@ -36,7 +36,7 @@ export class DataUtil {
         const diffWeeks = Math.floor(diffDays / 7);
         const diffYears = Math.floor(diffDays / 365);
 
-        console.log('Now:', now, 'Comment:', commentDate, 'Diff:', diffMs);
+        // console.log('Now:', now, 'Comment:', commentDate, 'Diff:', diffMs);
 
         if (diffYears > 0) {
             return `${diffYears}y`;

@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import Tippy from '@tippyjs/react/headless';
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, Play, X, Smile } from 'lucide-react';
+import { Heart, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, Play, } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 
-import { likePostRequest } from '../../redux/features/reels/reelsSlice';
 import { RootState } from '@/src/redux/store';
 import { PostService } from '../../service/postService';
 import { DataUtil } from '../../utils/DataUtil';
 import Comment from '../Reels/Comment';
+import { usePostComments } from '../../hooks/usePostComments';
 import 'tippy.js/dist/tippy.css';
 
 export default function ReelCard({
@@ -27,10 +26,8 @@ export default function ReelCard({
     const dispatch = useDispatch();
 
     useEffect(() => {
-        console.log('Reel ID changed:', reel.id);
         setShowComments(false);
     }, [reel.id]);
-    console.log('Reel ID changed:', reel.id);
 
     const handleLike = async (reel: any) => {
         await PostService.like(reel.id);
@@ -38,6 +35,8 @@ export default function ReelCard({
         reel.isLiked = !reel.isLiked;
         setIsLiked((prev: boolean) => !prev);
     };
+
+    usePostComments(reel.id, showComments);
 
     const handleClickComment = (reel: any) => {
         setShowComments((prev) => !prev);
@@ -132,8 +131,8 @@ export default function ReelCard({
                             showComments={showComments}
                             setShowComments={setShowComments}
                             avatarUrl={avatarUrl}
-                            commentText={commentText}
-                            setCommentText={setCommentText}
+                            // commentText={commentText}
+                            // setCommentText={setCommentText}
                             handleClickComment={handleClickComment}
                         />
                         {/* <Tippy
