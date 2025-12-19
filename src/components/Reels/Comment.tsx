@@ -1,10 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Loader, X, Smile, ChevronDown, ChevronUp } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { Heart, MessageCircle, Loader, X, Smile } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Tippy from '@tippyjs/react/headless';
+
 import 'tippy.js/dist/tippy.css';
 import { DataUtil } from '../../utils/DataUtil';
 import { CommentService } from '../../service/commentService';
 import { usePostComments } from '../../hooks/usePostComments';
+import { createCommentRequest } from '../../redux/features/comment/commentSlice';
 
 type CommentProps = {
     reel: any;
@@ -14,20 +18,17 @@ type CommentProps = {
     handleClickComment: (reel: any) => void;
 };
 
-function Comment({
-    reel,
-    showComments,
-    setShowComments,
-    avatarUrl,
-    // commentText,
-    // setCommentText,
-    handleClickComment,
-}: CommentProps) {
+function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickComment }: CommentProps) {
+    const dispatch = useDispatch();
+    const { user } = useSelector((state: any) => state.auth || {});
     const [replyTo, setReplyTo] = useState<string | null>(null);
+    const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
     const [comments, setComments] = useState<any[]>([]);
     const [commentText, setCommentText] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [posting, setPosting] = useState(false);
+    const [rootCommentId, setRootCommentId] = useState<number>(0);
     const [cursor, setCursor] = useState<string | undefined>(undefined);
     const [hasMore, setHasMore] = useState(true);
     const commentsListRef = useRef<HTMLDivElement>(null);
@@ -46,14 +47,11 @@ function Comment({
         });
     }, []);
 
-    console.log('Replies state:', repliesState);
-
     // Callback khi comment bị xóa từ socket
     const handleCommentDeleted = useCallback((commentId: string) => {
         setComments((prev) => prev.filter((c) => c.id !== commentId));
     }, []);
 
-    // Join/leave post room + lắng nghe socket events
     usePostComments(reel?.id, showComments, handleCommentAdded, handleCommentDeleted);
 
     // Fetch comments khi mở popup
@@ -78,8 +76,6 @@ function Comment({
         fetchComments();
     }, [reel.id, showComments]);
 
-    // console.log('Comments:', comments);
-
     // Handle scroll để load thêm comments
     const handleCommentsScroll = async (e: React.UIEvent<HTMLDivElement>) => {
         const element = e.currentTarget;
@@ -101,12 +97,18 @@ function Comment({
         }
     };
 
-    const handleReplyComment = async (username: string) => {
-        console.log('Reply to comment');
-        setReplyTo(username);
-        setCommentText(`@${username} `);
-        // focus input để gõ tiếp
-        setTimeout(() => inputRef.current?.focus(), 0);
+    const handleReplyComment = async (commentId: string, rootCommentId: number, username: string) => {
+        setReplyTo(commentId);
+        setReplyToUsername(username);
+        setRootCommentId(rootCommentId);
+        const text = `@${username} `;
+        setCommentText(text);
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+                inputRef.current.setSelectionRange(text.length, text.length);
+            }
+        }, 0);
     };
 
     const handleViewReplies = async (comment: any) => {
@@ -139,6 +141,7 @@ function Comment({
                     loading: false,
                     cursor: response.nextCursor,
                     hasMore: response.hasMore,
+                    total: response.total,
                     isShowing: true,
                 },
             }));
@@ -179,9 +182,9 @@ function Comment({
         }
     };
 
-    const handleLikeReply = async (replyId: string, commentId: string) => {
+    const handleLikeReply = async (postId: string, replyId: string, commentId: string) => {
         try {
-            await CommentService.likeComment(replyId);
+            await CommentService.likeComment(postId, replyId);
             setRepliesState((prev) => ({
                 ...prev,
                 [commentId]: {
@@ -202,13 +205,9 @@ function Comment({
         }
     };
 
-    const handleViewAll = () => {
-        console.log('View all replies');
-    };
-
-    const handleLikeComment = async (commentId: string) => {
+    const handleLikeComment = async (postId: string, commentId: string) => {
         try {
-            await CommentService.likeComment(commentId);
+            await CommentService.likeComment(postId, commentId);
             // Toggle isLiked trong comment state
             setComments((prev) =>
                 prev.map((c) =>
@@ -226,12 +225,46 @@ function Comment({
         }
     };
 
+    console.log('Rendering Comment component with comments:', comments);
+    console.log('Replies state:', repliesState);
+
     const clearReply = () => {
         setReplyTo(null);
+        setReplyToUsername(null);
         setCommentText('');
     };
 
-    const handleComment = async () => {};
+    const handleComment = async () => {
+        let text = commentText.trim();
+        if (!text || posting) return;
+
+        if (replyTo && replyToUsername) {
+            const mentionPattern = `@${replyToUsername} `;
+            if (text.startsWith(mentionPattern)) {
+                text = text.slice(mentionPattern.length).trim();
+            }
+        }
+
+        // ✅ Kiểm tra text có nội dung không (sau khi bỏ @tên)
+        if (!text) return;
+
+        setCommentText('');
+        setReplyTo(null);
+        setReplyToUsername(null);
+
+        // ✅ Dispatch Redux action → Saga xử lý → Server save + emit broadcast
+        dispatch(
+            createCommentRequest({
+                postId: reel.id,
+                text,
+                rootCommentId: rootCommentId,
+                replyToCommentId: replyTo ? parseInt(replyTo) : undefined,
+            }),
+        );
+
+        // Server sẽ emit 'comment_added' broadcast
+        // usePostComments hook sẽ nhận và cập nhật UI realtime cho tất cả tabs
+    };
 
     return (
         <>
@@ -311,14 +344,19 @@ function Comment({
                                                         <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                                                             <span>{c?.likesCount || 0} likes</span>
                                                             <button
-                                                                onClick={() => handleReplyComment(c?.username)}
+                                                                onClick={() =>
+                                                                    handleReplyComment(c.id, c.id, c?.username)
+                                                                }
                                                                 className="font-semibold"
                                                             >
                                                                 Reply
                                                             </button>
                                                         </div>
                                                     </div>
-                                                    <button onClick={() => handleLikeComment(c.id)} className="p-1">
+                                                    <button
+                                                        onClick={() => handleLikeComment(reel.id, c.id)}
+                                                        className="p-1"
+                                                    >
                                                         <Heart
                                                             className={`w-4 h-4 ${c?.isLiked ? 'text-[#fc323e]' : 'text-black'}`}
                                                             fill={c?.isLiked ? '#fc323e' : 'none'}
@@ -371,20 +409,35 @@ function Comment({
                                                                                 )}
                                                                             </span>
                                                                             <p className="text-sm mt-1">
+                                                                                {reply?.replyToUser ? (
+                                                                                    <>
+                                                                                        <Link
+                                                                                            to={`/profile/${reply?.replyToUser?.id}`}
+                                                                                            className="text-blue-500 font-semibold hover:underline"
+                                                                                        >
+                                                                                            @
+                                                                                            {
+                                                                                                reply?.replyToUser
+                                                                                                    ?.userName
+                                                                                            }
+                                                                                        </Link>{' '}
+                                                                                    </>
+                                                                                ) : null}
                                                                                 {reply?.text}
                                                                             </p>
                                                                         </div>
                                                                         <button
                                                                             onClick={() =>
                                                                                 handleLikeReply(
+                                                                                    reel.id,
                                                                                     reply.id,
                                                                                     c.id.toString(),
                                                                                 )
                                                                             }
-                                                                            className="p-0.5 flex-shrink-0"
+                                                                            className="p-1 flex-shrink-0"
                                                                         >
                                                                             <Heart
-                                                                                className={`w-3 h-3 ${reply?.isLiked ? 'text-[#fc323e]' : 'text-gray-400'}`}
+                                                                                className={`w-4 h-4 ${reply?.isLiked ? 'text-[#fc323e]' : 'text-gray-400'}`}
                                                                                 fill={
                                                                                     reply?.isLiked ? '#fc323e' : 'none'
                                                                                 }
@@ -401,7 +454,11 @@ function Comment({
                                                                         </span>
                                                                         <button
                                                                             onClick={() =>
-                                                                                handleReplyComment(reply?.username)
+                                                                                handleReplyComment(
+                                                                                    reply.id,
+                                                                                    reply.rootCommentId,
+                                                                                    reply?.username,
+                                                                                )
                                                                             }
                                                                             className="hover:text-gray-700 text-xs"
                                                                         >
@@ -448,7 +505,7 @@ function Comment({
                         {/* Replying bar */}
                         {replyTo && (
                             <div className="px-4 py-2 bg-gray-100 text-sm text-gray-700 flex items-center justify-between border-t border-gray-200">
-                                <span className="truncate">Replying to {replyTo}</span>
+                                <span className="truncate">Replying to @{replyToUsername}</span>
                                 <button
                                     onClick={clearReply}
                                     className="p-1 hover:bg-gray-200 rounded-full transition-colors"
@@ -468,6 +525,7 @@ function Comment({
                                 />
                                 <div className="flex-1 flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2">
                                     <input
+                                        ref={inputRef}
                                         type="text"
                                         placeholder="Add a comment..."
                                         value={commentText}

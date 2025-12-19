@@ -8,18 +8,20 @@ import usersReducer from './features/user/userSlice';
 import authReducer from './features/auth/authSlice';
 import themeReducer from './features/theme/themeSlice';
 import messageReducer from './features/message/messageSlice';
+import commentReducer from './features/comment/commentSlice';
 
 const rootReducer = combineReducers({
-  users: usersReducer,
-  auth: authReducer,
-  theme: themeReducer,
-  message: messageReducer,
+    users: usersReducer,
+    auth: authReducer,
+    theme: themeReducer,
+    message: messageReducer,
+    comment: commentReducer,
 });
 
 const persistConfig: PersistConfig<ReturnType<typeof rootReducer>> = {
-  key: 'root',
-  storage,
-  whitelist: ['auth'], // chỉ lưu auth
+    key: 'root',
+    storage,
+    whitelist: ['auth'], // chỉ lưu auth
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -27,12 +29,12 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
 const sagaMiddleware = createSagaMiddleware();
 
 export const store = configureStore({
-  reducer: persistedReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      thunk: false,
-      serializableCheck: false,
-    }).concat(sagaMiddleware),
+    reducer: persistedReducer,
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            thunk: false,
+            serializableCheck: false,
+        }).concat(sagaMiddleware),
 });
 
 sagaMiddleware.run(rootSaga);

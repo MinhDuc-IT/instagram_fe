@@ -17,6 +17,7 @@ export interface GetCommentsResponse {
     comments: Comment[];
     nextCursor?: string;
     hasMore: boolean;
+    total?: number;
 }
 
 export const CommentService = {
@@ -35,10 +36,12 @@ export const CommentService = {
         }
     },
 
-    async addComment(postId: string, content: string): Promise<Comment> {
+    async addComment(postId: string, content: string, rootCommentId: number, replyToCommentId?: number): Promise<Comment> {
         try {
-            const response = await axios.post(`/posts/${postId}/comments`, {
-                content,
+            const response = await axios.post(`/post/${postId}/comments`, {
+                text: content,
+                replyToCommentId,
+                rootCommentId,
             });
             return response.data;
         } catch (error) {
@@ -56,9 +59,9 @@ export const CommentService = {
         }
     },
 
-    async likeComment(commentId: string): Promise<void> {
+    async likeComment(postId: string, commentId: string): Promise<void> {
         try {
-            await axios.post(`/comments/${commentId}/like`);
+            await axios.post(`/post/${postId}/comments/${commentId}/like`);
         } catch (error) {
             console.error('Error liking comment:', error);
             throw error;

@@ -125,9 +125,4 @@ export const useSocket = () => {
             // Chỉ ngắt kết nối khi người dùng đăng xuất
         };
     }, []);
-    
-    return {
-        socket: socketRef.current,
-        isConnected: socketRef.current?.connected ?? false,
-    };
 };

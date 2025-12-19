@@ -1,6 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { getSocket } from '../utils/socket';
-import { useSocket } from './useSocket';
 
 export const usePostComments = (
     postId: string,
@@ -8,22 +7,26 @@ export const usePostComments = (
     onCommentAdded?: (comment: any) => void,
     onCommentDeleted?: (commentId: string) => void,
 ) => {
-    const { socket, isConnected } = useSocket();
+    const socketRef = useRef<any>(null); 
+    const listenersRef = useRef<{ added?: any; deleted?: any }>({});
 
     useEffect(() => {
-        if (!postId || !showComments || !isConnected || !socket) return;
+        if (!postId || !showComments) return;
 
-        // const socket = getSocket();
-        if (!socket) {
+        const socket = getSocket(); // ✅ Gọi getSocket() trực tiếp
+
+        if (!socket || !socket.connected) {
             console.warn('Socket not connected');
             return;
         }
-        // console.log('Socket connected:', socket.connected);
-        // Join room chỉ khi showComments = true
-        socket.emit('join_post', { postId });
-        // console.log('Joined post room:', postId);
 
-        // Lắng nghe comment mới
+        socketRef.current = socket;
+
+        // Join post room
+        socket.emit('join_post', { postId });
+        console.log('📌 Joined post room:', postId);
+
+        // ✅ Định nghĩa listeners
         const handleCommentAdded = (data: any) => {
             if (data.postId === postId) {
                 console.log('📝 New comment received:', data.comment);
@@ -31,7 +34,6 @@ export const usePostComments = (
             }
         };
 
-        // Lắng nghe comment bị xóa
         const handleCommentDeleted = (data: any) => {
             if (data.postId === postId) {
                 console.log('🗑️ Comment deleted:', data.commentId);
@@ -39,14 +41,21 @@ export const usePostComments = (
             }
         };
 
+        // ✅ Ghi danh lắng nghe
         socket.on('comment_added', handleCommentAdded);
         socket.on('comment_deleted', handleCommentDeleted);
 
+        // ✅ Lưu listeners vào ref để cleanup sau
+        listenersRef.current = { added: handleCommentAdded, deleted: handleCommentDeleted };
+
+        // ✅ Cleanup: bỏ lắng nghe + rời room
         return () => {
-            // Leave room khi đóng comment (showComments = false)
-            socket.emit('leave_post', { postId });
-            socket.off('comment_added', handleCommentAdded);
-            socket.off('comment_deleted', handleCommentDeleted);
+            if (socketRef.current) {
+                socketRef.current.emit('leave_post', { postId });
+                socketRef.current.off('comment_added', listenersRef.current.added);
+                socketRef.current.off('comment_deleted', listenersRef.current.deleted);
+                console.log('📌 Left post room:', postId);
+            }
         };
-    }, [postId, showComments, isConnected, socket, onCommentAdded, onCommentDeleted]);
+    }, [postId, showComments, onCommentAdded, onCommentDeleted]);
 };
