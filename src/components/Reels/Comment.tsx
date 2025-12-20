@@ -37,20 +37,87 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
     const [repliesState, setRepliesState] = useState<Record<string, any>>({});
 
     // Callback khi nhận comment mới từ socket
-    const handleCommentAdded = useCallback((comment: any) => {
+    const handleCommentAdded = useCallback((incoming: any) => {
+        // 1) Cập nhật danh sách comments (top-level) hoặc tăng repliesCount nếu là reply
         setComments((prev) => {
-            // Kiểm tra không trùng comment (tránh duplicate khi user tự post)
-            if (prev.some((c) => c.id === comment.id)) {
-                return prev;
+            // Tránh duplicate
+            if (prev.some((c) => c.id === incoming.id)) return prev;
+
+            const isReply = !!incoming?.replyToUser;
+            if (!isReply) {
+                // Comment gốc → prepend vào danh sách
+                return [incoming, ...prev];
             }
-            return [comment, ...prev];
+
+            // Là reply → tăng repliesCount cho comment gốc nếu đang có trong list
+            const rootId = incoming?.rootCommentId ?? incoming?.rootId ?? incoming?.root ?? null;
+            if (!rootId) return prev;
+
+            return prev.map((c) =>
+                c.id === rootId ? { ...c, repliesCount: (c.repliesCount || 0) + 1 } : c,
+            );
+        });
+
+        // 2) Nếu đang mở replies của comment gốc thì append thêm vào repliesState để hiển thị realtime
+        const rootId = incoming?.rootCommentId ?? incoming?.rootId ?? incoming?.root ?? null;
+        if (!rootId) return;
+
+        setRepliesState((prev) => {
+            const key = rootId.toString();
+            const state = prev[key];
+            if (!state) return prev; // chưa mở replies → không ép mở
+
+            // Tránh duplicate trong replies
+            if (state?.replies?.some((r: any) => r.id === incoming.id)) return prev;
+
+            return {
+                ...prev,
+                [key]: {
+                    ...state,
+                    replies: [...(state.replies || []), incoming],
+                },
+            };
         });
     }, []);
 
     // Callback khi comment bị xóa từ socket
-    const handleCommentDeleted = useCallback((commentId: string) => {
-        setComments((prev) => prev.filter((c) => c.id !== commentId));
-    }, []);
+    const handleCommentDeleted = useCallback(
+        (commentId: string) => {
+            // 1) Thử xóa ở top-level; nếu không thấy, có thể là reply → giảm repliesCount cho parent nếu tìm thấy trong repliesState
+            setComments((prev) => {
+                // Nếu xóa được ở top-level thì trả về list đã filter
+                if (prev.some((c) => c.id === commentId)) {
+                    return prev.filter((c) => c.id !== commentId);
+                }
+
+                // Không phải top-level → duyệt qua repliesState để giảm repliesCount cho parent nếu có
+                const next = prev.map((c) => {
+                    const key = c.id?.toString?.() ?? '';
+                    const rs = repliesState[key];
+                    if (rs?.replies?.some?.((r: any) => r.id === commentId)) {
+                        return { ...c, repliesCount: Math.max(0, (c.repliesCount || 0) - 1) };
+                    }
+                    return c;
+                });
+                return next;
+            });
+
+            // 2) Xóa trong repliesState nếu nó là reply
+            setRepliesState((prev) => {
+                const next = { ...prev } as Record<string, any>;
+                for (const key of Object.keys(next)) {
+                    const state = next[key];
+                    if (!state?.replies) continue;
+                    if (state.replies.some((r: any) => r.id === commentId)) {
+                        next[key] = { ...state, replies: state.replies.filter((r: any) => r.id !== commentId) };
+                        break;
+                    }
+                }
+                return next;
+            });
+        },
+        [repliesState],
+    );
 
     usePostComments(reel?.id, showComments, handleCommentAdded, handleCommentDeleted);
 
@@ -225,8 +292,8 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
         }
     };
 
-    console.log('Rendering Comment component with comments:', comments);
-    console.log('Replies state:', repliesState);
+    // console.log('Rendering Comment component with comments:', comments);
+    // console.log('Replies state:', repliesState);
 
     const clearReply = () => {
         setReplyTo(null);
