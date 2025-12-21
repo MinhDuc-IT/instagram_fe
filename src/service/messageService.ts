@@ -4,7 +4,9 @@ import { Conversation, Message } from '../redux/features/message/messageSlice';
 
 // Get all conversations for current user
 export const getConversationsApi = (): Promise<AxiosResponse<Conversation[]>> => {
-    return axios.get<Conversation[]>('/messages/conversations');
+    const res: Promise<AxiosResponse<Conversation[]>> = axios.get<Conversation[]>('/messages/conversations');
+    console.log('getConversationsApi called:', res);
+    return res;
 };
 
 // Get messages for a conversation with pagination

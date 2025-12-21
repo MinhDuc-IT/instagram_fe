@@ -41,7 +41,6 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
     function (response) {
         NProgress.done();
-        console.log('Response:', response);
         return response && response.data ? response.data : response;
     },
 

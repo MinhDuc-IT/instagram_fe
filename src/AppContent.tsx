@@ -1,26 +1,24 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import { useSelector } from "react-redux";
-import { RootState } from "./redux/store";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import { useSelector } from 'react-redux';
+import { RootState } from './redux/store';
 
-import Sidebar from "./components/Sidebar";
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Explore from "./pages/Explore";
-import Reels from "./pages/Reels";
-import Messages from "./pages/Messages";
-import Notifications from "./pages/Notifications";
-import Profile from "./pages/Profile";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import VerifyEmail from "./pages/VerifyEmail";
-import ProtectedRoute from "./ProtectedRoute";
-import SocialLogin from "./pages/SocialLogin"
+import Sidebar from './components/Sidebar';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Explore from './pages/Explore';
+import Reels from './pages/Reels';
+import Messages from './pages/Messages';
+import Notifications from './pages/Notifications';
+import Profile from './pages/Profile';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import VerifyEmail from './pages/VerifyEmail';
+import ProtectedRoute from './ProtectedRoute';
+import SocialLogin from './pages/SocialLogin';
 
 export default function AppContent() {
-    const isAuthenticated = useSelector(
-        (state: RootState) => state.auth.isAuthenticated
-    );
+    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
     return (
         <BrowserRouter>
@@ -30,7 +28,7 @@ export default function AppContent() {
                     <Navbar />
                 </>
             )}
-            <main className={isAuthenticated ? "md:ml-64 pb-14 md:pb-0" : ""}>
+            <main className={isAuthenticated ? 'md:ml-64 pb-14 md:pb-0' : ''}>
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />

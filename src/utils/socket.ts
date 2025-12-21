@@ -30,19 +30,22 @@ export const getSocket = (): Socket | null => {
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionAttempts: 5,
-            forceNew: true,
         });
 
         socket.on('connect', () => {
-            console.log('Socket connected:', socket?.id);
+            console.log('✅ Socket connected:', socket?.id);
         });
 
-        socket.on('disconnect', () => {
-            console.log('Socket disconnected');
+        socket.on('disconnect', (reason) => {
+            console.log('❌ Socket disconnected. Reason:', reason);
         });
 
         socket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
+            console.error('⚠️ Socket connection error:', error);
+        });
+
+        socket.on('reconnect', (attemptNumber) => {
+            console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
         });
     }
 
