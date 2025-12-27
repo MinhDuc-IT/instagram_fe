@@ -1,4 +1,4 @@
-import { User } from "../types/user.type"
+import { User } from "../../types/user.type"
 
 interface Props {
   user: User & { hasStory?: boolean }

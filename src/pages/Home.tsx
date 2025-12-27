@@ -1,11 +1,16 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { fetchHomeFeed, fetchMorePosts } from "../redux/features/post/postSlice"
+import { fetchStories, fetchMoreStories } from "../redux/features/story/storySlice"
 import PostCard from "../components/PostCard"
 import PostModal from "../components/PostModal"
-import StoryBubble from "../components/StoryBubble"
+import StoryBubble from "../components/story/StoryBubble"
 import { RootState } from "../redux/store"
 import { Post } from "../types/post.type"
+import StorySkeleton from "../components/story/StorySkeleton"
+import EmptyStories from "../components/story/EmptyStories"
+import AddStoryBubble from "../components/story/AddStoryBubble"
+import AddStoryModal from "../components/story/AddStoryModal"
 
 export default function Home() {
   const dispatch = useDispatch()
@@ -21,11 +26,37 @@ export default function Home() {
   const {
     stories,
     loading: storyLoading,
+    loadingMore: storyLoadingMore,
+    hasMore: hasMoreStories,
   } = useSelector((state: RootState) => state.story)
 
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
   const observerTarget = useRef<HTMLDivElement>(null)
   const isFetchingRef = useRef(false)
+  const storyObserverRef = useRef<HTMLDivElement>(null)
+  const [showAddStory, setShowAddStory] = useState(false)
+
+  useEffect(() => {
+    dispatch(fetchStories())
+  }, [])
+
+  useEffect(() => {
+    const el = storyObserverRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(entries => {
+      if (
+        entries[0].isIntersecting &&
+        !storyLoading &&
+        hasMoreStories
+      ) {
+        dispatch(fetchMoreStories())
+      }
+    }, { rootMargin: "200px" })
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [storyLoading, hasMoreStories])
 
   // Initial load
   useEffect(() => {
@@ -68,30 +99,35 @@ export default function Home() {
     }
   }, [currentPage])
 
+  function createStoryRequest(form: FormData): any {
+    throw new Error("Function not implemented.")
+  }
+
   return (
     <div className="max-w-2xl mx-auto py-4 px-4">
 
       {/* ===== STORIES ===== */}
-      <div className="bg-white border border-gray-300 rounded-sm p-4 mb-6 overflow-x-auto hide-scrollbar">
+      <div className="bg-white border rounded-sm p-4 mb-6 overflow-x-auto">
         <div className="flex gap-4">
 
-          {loading && (
-            <span className="text-sm text-gray-500">Loading stories...</span>
-          )}
+          {/* ADD STORY */}
+          <AddStoryBubble onClick={() => setShowAddStory(true)} />
 
-          {!loading && stories.length === 0 && (
-            <div className="flex gap-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                <div key={i} className="flex-shrink-0">
-                  <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          )}
+          {/* LOADING */}
+          {storyLoading && stories.length === 0 && <StorySkeleton />}
 
+          {/* EMPTY */}
+          {!storyLoading && stories.length === 0 && <EmptyStories />}
+
+          {/* STORIES */}
           {stories.map(story => (
             <StoryBubble key={story.id} user={story.user} />
           ))}
+
+          {/* PAGING TRIGGER */}
+          {hasMoreStories && (
+            <div ref={storyObserverRef} className="w-1" />
+          )}
         </div>
       </div>
 
@@ -161,6 +197,18 @@ export default function Home() {
         <PostModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
+        />
+      )}
+
+      {showAddStory && (
+        <AddStoryModal
+          onClose={() => setShowAddStory(false)}
+          onSubmit={file => {
+            const form = new FormData()
+            form.append("file", file)
+            dispatch(createStoryRequest(form))
+            setShowAddStory(false)
+          }}
         />
       )}
     </div>
