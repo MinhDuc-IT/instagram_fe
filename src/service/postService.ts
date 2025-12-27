@@ -1,5 +1,21 @@
 import { MediaFile } from '../types/media.types';
+import { Post } from '../types/post.type';
 import axios from '../utils/axiosCustomize';
+
+interface GetHomePostsParams {
+    page?: number
+    limit?: number
+}
+
+interface PostsResponse {
+    data: {
+        posts: Post[]
+        currentPage: number
+        totalPages: number
+        totalPosts: number
+        hasMore: boolean
+    }
+}
 
 export const PostService = {
     /**
@@ -56,7 +72,7 @@ export const PostService = {
             throw error;
         }
     },
-    
+
     async like(postId: string | number) {
         try {
             const res = await axios.post(`post/${postId}/like`);
@@ -89,4 +105,12 @@ export const PostService = {
 
     update: (id: string, data: any) =>
         axios.patch(`/post/${id}`, data),
+
+    getHomePosts: async (params: GetHomePostsParams = {}): Promise<PostsResponse> => {
+        const { page = 1, limit = 10 } = params
+        const response = await axios.get("/post/home", {
+            params: { page, limit },
+        })
+        return response
+    },
 };
