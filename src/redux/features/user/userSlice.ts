@@ -1,6 +1,6 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Post } from "../../../types/post.type";
-import {UserUpdateRequest } from "../../../types/user.type";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Post } from '../../../types/post.type';
+import { UserUpdateRequest } from '../../../types/user.type';
 export interface User {
     id: number;
     username: string;
@@ -50,7 +50,7 @@ const initialState: UsersState = {
 };
 
 export const userSlice = createSlice({
-    name: "users",
+    name: 'users',
     initialState,
     reducers: {
         // Users
@@ -93,9 +93,7 @@ export const userSlice = createSlice({
             state.profileUser = action.payload;
 
             // Nếu bạn muốn cập nhật cả danh sách users
-            state.users = state.users.map((u) =>
-                u.id === action.payload.id ? action.payload : u
-            );
+            state.users = state.users.map((u) => (u.id === action.payload.id ? action.payload : u));
         },
         updateProfileFailure: (state, action: PayloadAction<string>) => {
             state.loading = false;
@@ -151,24 +149,20 @@ export const userSlice = createSlice({
         // Toggle like on a post (optimistic)
         toggleLikePost: (state, action: PayloadAction<{ postId: string; isLiked: boolean; likes: number }>) => {
             const { postId, isLiked, likes } = action.payload;
-            state.userPosts = state.userPosts.map((p) =>
-                p.id === postId ? { ...p, isLiked, likes } as Post : p
-            );
+            state.userPosts = state.userPosts.map((p) => (p.id === postId ? ({ ...p, isLiked, likes } as Post) : p));
         },
 
         // Toggle save on a post
         toggleSavePost: (state, action: PayloadAction<{ postId: string; isSaved: boolean }>) => {
             const { postId, isSaved } = action.payload;
-            state.userPosts = state.userPosts.map((p) =>
-                p.id === postId ? { ...p, isSaved } as Post : p
-            );
+            state.userPosts = state.userPosts.map((p) => (p.id === postId ? ({ ...p, isSaved } as Post) : p));
         },
 
         // Add comment to post (optimistic)
         addCommentToPost: (state, action: PayloadAction<{ postId: string; comment: any }>) => {
             const { postId, comment } = action.payload;
             state.userPosts = state.userPosts.map((p) =>
-                p.id === postId ? { ...p, comments: [...(p.comments || []), comment] } as Post : p
+                p.id === postId ? ({ ...p, comments: [...(p.comments || []), comment] } as Post) : p,
             );
         },
 
@@ -178,14 +172,25 @@ export const userSlice = createSlice({
             state.users = state.users.map((user) =>
                 user.id === userId
                     ? {
-                        ...user,
-                        isFollowing: !user.isFollowing,
-                        followers: user.isFollowing
-                            ? (user.followers ?? 0) - 1
-                            : (user.followers ?? 0) + 1,
-                    }
-                    : user
+                          ...user,
+                          isFollowing: !user.isFollowing,
+                          followers: user.isFollowing ? (user.followers ?? 0) - 1 : (user.followers ?? 0) + 1,
+                      }
+                    : user,
             );
+        },
+
+        // Append a new comment to a post when received from socket
+        addCommentFromSocket: (state, action: PayloadAction<{ postId: string | number; comment: any }>) => {
+            const { postId, comment } = action.payload;
+            state.userPosts = state.userPosts.map((p) => {
+                if (String(p.id) !== String(postId)) return p;
+
+                const existing = (p.comments || []).some((c: any) => c.id === comment.id);
+                if (existing) return p;
+
+                return { ...p, comments: [...(p.comments || []), comment] } as Post;
+            });
         },
     },
 });
@@ -211,6 +216,7 @@ export const {
     toggleSavePost,
     addCommentToPost,
     toggleFollow,
+    addCommentFromSocket,
     updateProfileRequest,
     updateProfileSuccess,
     updateProfileFailure,
