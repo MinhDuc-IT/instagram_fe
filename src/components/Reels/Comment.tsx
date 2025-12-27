@@ -6,8 +6,9 @@ import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
 import { CommentService } from '../../service/commentService';
 import { usePostComments } from '../../hooks/usePostComments';
-import { createCommentRequest, getCommentsRequest } from '../../redux/features/comment/commentSlice';
+import { createCommentRequest, getCommentsRequest, updateLikeComment } from '../../redux/features/comment/commentSlice';
 import CommentItem from '../Comment/CommentItem';
+import { COMMENTS_PAGE_SIZE } from '../../constants/filters';
 
 type CommentProps = {
     reel: any;
@@ -37,7 +38,7 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
         if (!showComments) return;
 
         const fetchComments = async () => {
-            dispatch(getCommentsRequest({ postId: reel.id, page: 3 }));
+            dispatch(getCommentsRequest({ postId: reel.id, page: COMMENTS_PAGE_SIZE }));
         };
 
         fetchComments();
@@ -49,7 +50,7 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
         const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
 
         if (isNearBottom && hasMore && !loading && cursor) {
-            dispatch(getCommentsRequest({ postId: reel.id, page: 3, cursor }));
+            dispatch(getCommentsRequest({ postId: reel.id, page: COMMENTS_PAGE_SIZE, cursor }));
         }
     };
 
@@ -70,18 +71,16 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
     const handleLikeComment = async (postId: string, commentId: string) => {
         try {
             await CommentService.likeComment(postId, commentId);
-            // Toggle isLiked trong comment state
-            // setComments((prev) =>
-            //     prev.map((c) =>
-            //         c.id === commentId
-            //             ? {
-            //                   ...c,
-            //                   isLiked: !c.isLiked,
-            //                   likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
-            //               }
-            //             : c,
-            //     ),
-            // );
+            const commentsAfterLike = comments.map((c: any) =>
+                c.id === commentId
+                    ? {
+                          ...c,
+                          isLiked: !c.isLiked,
+                          likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
+                      }
+                    : c,
+            );
+            dispatch(updateLikeComment({ comments: commentsAfterLike }));
         } catch (error) {
             console.error('Failed to like comment:', error);
         }

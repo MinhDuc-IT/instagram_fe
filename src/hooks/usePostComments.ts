@@ -2,12 +2,10 @@ import { useEffect, useRef } from 'react';
 import { getSocket } from '../utils/socket';
 import { useDispatch } from 'react-redux';
 
-import { addCommentFromSocket } from '../redux/features/comment/commentSlice';
+import { addCommentFromSocket as addCommentFromSocketToList } from '../redux/features/comment/commentSlice';
+import { addCommentFromSocket as addCommentFromSocketToUserPosts } from '../redux/features/user/userSlice';
 
-export const usePostComments = (
-    postId: string,
-    showComments: boolean,
-) => {
+export const usePostComments = (postId: string, showComments: boolean) => {
     const dispatch = useDispatch();
     const socketRef = useRef<any>(null);
     const listenersRef = useRef<{ added?: any; deleted?: any }>({});
@@ -44,8 +42,8 @@ export const usePostComments = (
         const handleCommentAdded = (data: any) => {
             if (data.postId === postId) {
                 console.log('📝 New comment received:', data.comment);
-                // onCommentAdded?.(data.comment);
-                dispatch(addCommentFromSocket(data.comment));
+                dispatch(addCommentFromSocketToList(data.comment));
+                dispatch(addCommentFromSocketToUserPosts({ postId, comment: data.comment }));
             }
         };
 

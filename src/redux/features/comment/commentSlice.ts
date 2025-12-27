@@ -154,7 +154,13 @@ export const commentSlice = createSlice({
             }
         },
 
-        // Action: Append replies (load more)
+        // Action: update like comment
+        updateLikeComment: (state, action: PayloadAction<{ comments: any[] }>) => {
+            const { comments } = action.payload;
+            state.comments = comments;
+        },
+
+        // Action: Append replies
         appendReplies: (
             state,
             action: PayloadAction<{ commentId: number; comments: Comments[]; nextCursor: string; hasMore: boolean }>,
@@ -187,6 +193,7 @@ export const {
     toggleRepliesVisibility,
     updateReplies,
     appendReplies,
+    updateLikeComment,
 } = commentSlice.actions;
 
 export default commentSlice.reducer;

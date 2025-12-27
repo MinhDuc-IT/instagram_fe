@@ -24,3 +24,4 @@ export const ACCEPTED_FILE_TYPES = {
 };
 
 export const REELS_PAGE_SIZE = 10;
+export const COMMENTS_PAGE_SIZE = 5;
