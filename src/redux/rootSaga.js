@@ -4,6 +4,8 @@ import authSaga from './features/auth/authSaga';
 import messageSaga from './features/message/messageSaga';
 import commentSaga from './features/comment/commentSaga';
 import { notificationSaga } from './features/notification/notificationSaga';
+import postSaga from './features/post/postSaga';
+import { storySaga } from './features/story/storySaga';
 
 export default function* rootSaga() {
     yield all([
@@ -12,5 +14,7 @@ export default function* rootSaga() {
         messageSaga(),
         commentSaga(),
         notificationSaga(),
+        postSaga(),
+        storySaga(),
     ])
 }

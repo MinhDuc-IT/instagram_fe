@@ -1,12 +1,16 @@
 'use client';
 import { X, ChevronLeft, ChevronRight, Heart, MessageCircle, Bookmark, MoreHorizontal } from 'lucide-react';
-import React, { useEffect, useState, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import React, { useEffect, useState, useRef, use } from 'react';
+
 import { Post } from '../types/post.type';
 import { PostService } from '../service/postService';
-import { useSelector, useDispatch } from 'react-redux';
 import { toggleLikePost, toggleSavePost, addCommentToPost } from '../redux/features/user/userSlice';
+import { createCommentRequest } from '../redux/features/comment/commentSlice';
 import PostEditModal from './PostEditModal';
 import { RootState, AppDispatch } from '../redux/store';
+import CommentItem from './Comment/CommentItem';
+import { usePostComments } from '../hooks/usePostComments';
 
 interface PostModalProps {
     post: Post;
@@ -15,6 +19,11 @@ interface PostModalProps {
 }
 
 export default function PostModal({ post, onClose, scrollToCommentId }: PostModalProps) {
+    const dispatch = useDispatch<AppDispatch>();
+    const p =
+        useSelector((state: any) => state.users.userPosts.find((postItem: Post) => postItem.id === post.id)) || post;
+    console.log('PostModal rendering with post:', p);
+
     const [detail, setDetail] = useState<Post | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -23,8 +32,14 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
     const mountedRef = useRef(false);
     const [edit, setEdit] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [replyTo, setReplyTo] = useState<string | null>(null);
+    const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
+    const [rootCommentId, setRootCommentId] = useState<number>(0);
+    const inputRef = useRef<HTMLInputElement | null>(null);
     const { user: currentUser } = useSelector((state: RootState) => state.auth);
     const commentsContainerRef = useRef<HTMLDivElement>(null);
+
+    usePostComments(post.id.toString(), true);
 
     useEffect(() => {
         mountedRef.current = true;
@@ -32,6 +47,7 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
             setLoading(true);
             try {
                 const res = await PostService.getById(post.id);
+                console.log('Fetched post detail:', res);
                 // PostService returns response.data (see axios interceptor)
                 const p = res?.data || res;
                 setDetail(p);
@@ -78,12 +94,10 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
 
     if (!post) return null;
 
-    const p = detail || post;
+    // const p = detail || post;
 
     const prev = () => setCurrentIndex((s) => (s - 1 + (p.media?.length || 1)) % (p.media?.length || 1));
     const next = () => setCurrentIndex((s) => (s + 1) % (p.media?.length || 1));
-
-    const dispatch = useDispatch<AppDispatch>();
 
     const toggleLike = async () => {
         if (!p) return;
@@ -108,6 +122,22 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
         }
     };
 
+    const handleReplyComment = (commentId: string, rootCommentId: number, username: string) => {
+        setReplyTo(commentId);
+        setReplyToUsername(username);
+        setRootCommentId(rootCommentId);
+        const text = `@${username} `;
+        setCommentText(text);
+        setTimeout(() => {
+            if (inputRef.current) {
+                inputRef.current.focus();
+                inputRef.current.setSelectionRange(text.length, text.length);
+            }
+        }, 0);
+    };
+
+    const handleLikeComment = (reelId: string, commentId: string) => {};
+
     const toggleSave = async () => {
         if (!p) return;
         const currentPost = detail || post;
@@ -130,7 +160,8 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
     };
 
     const sendComment = async () => {
-        if (!p || !commentText.trim()) return;
+        let text = commentText;
+        if (!p || !text.trim()) return;
         const now = new Date().toISOString();
         const newComment = {
             id: Date.now(),
@@ -146,11 +177,30 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
 
         // optimistic append local + global
         setDetail((d) => (d ? { ...d, comments: [...originalComments, newComment] } : d));
-        dispatch(addCommentToPost({ postId: p.id, comment: newComment }));
+        // dispatch(addCommentToPost({ postId: p.id, comment: newComment }));
+
+        if (replyTo && replyToUsername) {
+            const mentionPattern = `@${replyToUsername} `;
+            if (text.startsWith(mentionPattern)) {
+                text = text.slice(mentionPattern.length).trim();
+            }
+        }
+        if (!text) return;
+
         setCommentText('');
+        setReplyTo(null);
+        setReplyToUsername(null);
 
         try {
-            await PostService.comment(p.id, newComment.content);
+            // await PostService.comment(p.id, newComment.content);
+            dispatch(
+                createCommentRequest({
+                    postId: p.id,
+                    text,
+                    rootCommentId: rootCommentId,
+                    replyToCommentId: replyTo ? parseInt(replyTo) : undefined,
+                }),
+            );
         } catch (err) {
             console.error('Comment API failed', err);
             // Rollback on error
@@ -219,7 +269,7 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
                             {/* dots */}
                             {p.media.length > 1 && (
                                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
-                                    {p.media.map((_, idx) => (
+                                    {p.media.map((_: any, idx: number) => (
                                         <div
                                             key={idx}
                                             className={`w-2 h-2 rounded-full ${idx === currentIndex ? 'bg-white' : 'bg-white/40'}`}
@@ -303,19 +353,24 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
                         {/* Comments list */}
                         <div className="space-y-3">
                             {p.comments && p.comments.length > 0 ? (
-                                p.comments.map((c) => (
-                                    <div key={c.id} className="flex items-start gap-3">
-                                        <img
-                                            src={c.userAvatar || '/placeholder.svg'}
-                                            className="w-8 h-8 rounded-full object-cover"
-                                        />
-                                        <div>
-                                            <div className="font-semibold text-sm">{c.username}</div>
-                                            <div className="text-sm text-gray-700 dark:text-gray-300">{c.content}</div>
-                                        </div>
-                                    </div>
+                                p.comments.map((c: any, index: number) => (
+                                    // <div key={c.id} className="flex items-start gap-3">
+                                    //     <img src={c.userAvatar || '/placeholder.svg'} className="w-8 h-8 rounded-full object-cover" />
+                                    //     <div>
+                                    //         <div className="font-semibold text-sm">{c.username}</div>
+                                    //         <div className="text-sm text-gray-700 dark:text-gray-300">{c.content}</div>
+                                    //     </div>
+                                    // </div>
+                                    <CommentItem
+                                        c={c}
+                                        idx={index}
+                                        reel={p}
+                                        handleLikeComment={handleLikeComment}
+                                        handleReplyComment={handleReplyComment}
+                                    />
                                 ))
                             ) : (
+                                // <div className="text-sm text-gray-500">Comments rendering not implemented yet</div>
                                 <div className="text-sm text-gray-500">No comments yet</div>
                             )}
                         </div>
@@ -360,6 +415,7 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
                         {/* Add comment input + send button */}
                         <div className="mt-3 flex gap-2">
                             <input
+                                ref={inputRef}
                                 value={commentText}
                                 onChange={(e) => setCommentText(e.target.value)}
                                 placeholder="Add a comment..."

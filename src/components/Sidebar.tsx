@@ -17,7 +17,7 @@ interface NavItem {
 }
 
 export default function Sidebar() {
-  const dispatch = useDispatch < AppDispatch > ();
+  const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -37,10 +37,10 @@ export default function Sidebar() {
   const [openPostModal, setOpenPostModal] = useState < boolean > (false);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!loading && !isAuthenticated && location.pathname !== "/home") {
       navigate("/login");
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, location.pathname]);
 
   const navItems: NavItem[] = [
     { path: "/home", icon: Home, label: "Home" },
@@ -106,8 +106,8 @@ export default function Sidebar() {
           <Link
             to={`/profile/${user?.id ?? ""}`}
             className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${location.pathname.includes("/profile")
-                ? "font-bold"
-                : "hover:bg-gray-100 dark:hover:bg-gray-900"
+              ? "font-bold"
+              : "hover:bg-gray-100 dark:hover:bg-gray-900"
               }`}
           >
             <img
