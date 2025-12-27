@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Heart, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, Play, } from 'lucide-react';
-import { useSelector, useDispatch } from 'react-redux';
+import { Heart, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, Play } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 import { RootState } from '@/src/redux/store';
 import { PostService } from '../../service/postService';
@@ -21,9 +21,7 @@ export default function ReelCard({
     const [isLiked, setIsLiked] = useState(reel.isLiked);
     const [isSaved, setIsSaved] = useState(reel.isSaved);
     const [showComments, setShowComments] = useState(false);
-    const [commentText, setCommentText] = useState('');
     const avatarUrl = useSelector((state: RootState) => state?.auth?.user?.avatar);
-    const dispatch = useDispatch();
 
     useEffect(() => {
         setShowComments(false);
@@ -38,7 +36,7 @@ export default function ReelCard({
 
     usePostComments(reel.id, showComments);
 
-    const handleClickComment = (reel: any) => {
+    const handleClickComment = () => {
         setShowComments((prev) => !prev);
     };
 
@@ -75,7 +73,6 @@ export default function ReelCard({
                 />
 
                 {/* Overlay */}
-                {/* <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50"> */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50">
                     {/* Top */}
                     <div className="absolute z-10 top-4 left-4 right-4 flex items-center justify-between">
@@ -113,11 +110,7 @@ export default function ReelCard({
 
                     {/* Right Actions */}
                     <div className="absolute bottom-12 right-[-60px] flex flex-col gap-6">
-                        <button
-                            // onClick={() => dispatch(likePostRequest(reel.id))}
-                            onClick={() => handleLike(reel)}
-                            className="flex flex-col items-center"
-                        >
+                        <button onClick={() => handleLike(reel)} className="flex flex-col items-center">
                             <Heart
                                 className={`w-7 h-7 ${isLiked ? 'text-[#fc323e]' : 'text-black'}`}
                                 fill={isLiked ? '#fc323e' : 'none'}
@@ -127,151 +120,13 @@ export default function ReelCard({
                             </span>
                         </button>
                         <Comment
+                            key={reel.id}
                             reel={reel}
                             showComments={showComments}
                             setShowComments={setShowComments}
                             avatarUrl={avatarUrl}
-                            // commentText={commentText}
-                            // setCommentText={setCommentText}
                             handleClickComment={handleClickComment}
                         />
-                        {/* <Tippy
-                            key={reel.id}
-                            visible={showComments}
-                            interactive
-                            placement="right"
-                            onClickOutside={() => setShowComments(false)}
-                            popperOptions={{
-                                modifiers: [
-                                    {
-                                        name: 'flip',
-                                        options: {
-                                            fallbackPlacements: ['left', 'bottom', 'top'],
-                                        },
-                                    },
-                                    {
-                                        name: 'offset',
-                                        options: {
-                                            offset: [210, -42],
-                                        },
-                                    },
-                                    {
-                                        name: 'preventOverflow',
-                                        options: {
-                                            padding: 16,
-                                        },
-                                    },
-                                ],
-                            }}
-                            render={(attrs) => (
-                                <div
-                                    className="bg-white rounded-2xl shadow-2xl w-[350px] max-w-[calc(100vw-32px)] h-[400px] max-h-[calc(100vh-32px)] flex flex-col animate-scaleIn"
-                                    tabIndex={-1}
-                                    {...attrs}
-                                >
-                                    
-                                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                                        <button
-                                            onClick={() => setShowComments(false)}
-                                            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                                        >
-                                            <X className="w-6 h-6" />
-                                        </button>
-                                        <h3 className="text-base font-semibold">Comments</h3>
-                                        <div className="w-8" />
-                                    </div>
-
-                                    <div className="flex-1 overflow-y-auto px-4 py-2">
-                                        {fakeComments?.length > 0 ? (
-                                            fakeComments.map((c: any, idx: number) => (
-                                                <div key={idx} className="flex gap-3 py-3">
-                                                    <img
-                                                        src={
-                                                            c.userAvatar || `https://i.pravatar.cc/150?img=${idx + 10}`
-                                                        }
-                                                        alt={c.username}
-                                                        className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="flex items-start justify-between gap-2">
-                                                            <div className="flex-1">
-                                                                <span className="font-semibold text-sm">
-                                                                    {c.username}
-                                                                </span>
-                                                                <span className="ml-[5px] text-gray-500 text-xs">
-                                                                    2h
-                                                                </span>
-                                                                <p className="text-sm mt-1">{c.text}</p>
-                                                                <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                                                    <span>{c.likes || 0} likes</span>
-                                                                    <button className="font-semibold">Reply</button>
-                                                                </div>
-                                                            </div>
-                                                            <button className="p-1">
-                                                                <Heart className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-
-                                                        {c.replies > 0 && (
-                                                            <button className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                                                                <div className="w-6 h-px bg-gray-300" />
-                                                                <span>View all {c.replies} replies</span>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center py-12">
-                                                <MessageCircle className="w-16 h-16 text-gray-300 mb-3" />
-                                                <p className="text-gray-500 text-sm">No comments yet</p>
-                                                <p className="text-gray-400 text-xs mt-1">Start the conversation</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="border-t border-gray-200 px-4 py-3 bg-white rounded-b-2xl">
-                                        <div className="flex items-center gap-3">
-                                            <img
-                                                src={avatarUrl || 'https://i.pravatar.cc/150?img=1'}
-                                                alt="Your avatar"
-                                                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                            />
-                                            <div className="flex-1 flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Add a comment..."
-                                                    value={commentText}
-                                                    onChange={(e) => setCommentText(e.target.value)}
-                                                    className="flex-1 bg-transparent outline-none text-sm"
-                                                />
-                                                <button className="p-1">
-                                                    <Smile className="w-5 h-5 text-gray-500" />
-                                                </button>
-                                            </div>
-                                            {commentText && (
-                                                <button
-                                                    onClick={() => {
-                                                        console.log('Post comment:', commentText);
-                                                        setCommentText('');
-                                                    }}
-                                                    className="text-blue-500 font-semibold text-sm"
-                                                >
-                                                    Post
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        >
-                            <button onClick={() => handleClickComment(reel)} className="flex flex-col items-center">
-                                <MessageCircle className="w-7 h-7 text-black" />
-                                <span className="text-black text-xs mt-1">
-                                    {reel?.commentsCount?.toLocaleString?.() || 0}
-                                </span>
-                            </button>
-                        </Tippy> */}
                         <button className="flex flex-col items-center">
                             <Send className="w-7 h-7 text-black" />
                         </button>
