@@ -25,6 +25,14 @@ export default function Sidebar() {
     (state: RootState) => state.auth
   );
 
+  const { unreadCount } = useSelector(
+    (state: RootState) => state.notification
+  );
+
+  const { totalUnreadMessages } = useSelector(
+    (state: RootState) => state.message
+  );
+
   const [showCreateModal, setShowCreateModal] = useState < boolean > (false);
   const [openPostModal, setOpenPostModal] = useState < boolean > (false);
 
@@ -56,17 +64,28 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 space-y-2">
-          {navItems.map(({ path, icon: Icon, label }) => (
-            <Link
-              key={path}
-              to={path}
-              className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${isActive(path) ? "font-bold" : "hover:bg-gray-100 dark:hover:bg-gray-900"
-                }`}
-            >
-              <Icon className="w-6 h-6" fill={isActive(path) ? "currentColor" : "none"} />
-              <span>{label}</span>
-            </Link>
-          ))}
+          {navItems.map(({ path, icon: Icon, label }) => {
+            const showNotificationBadge = path === "/notifications" && unreadCount > 0;
+            const showMessageBadge = path === "/messages" && totalUnreadMessages > 0;
+            const showBadge = showNotificationBadge || showMessageBadge;
+            
+            return (
+              <Link
+                key={path}
+                to={path}
+                className={`relative flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${isActive(path) ? "font-bold" : "hover:bg-gray-100 dark:hover:bg-gray-900"
+                  }`}
+              >
+                <div className="relative">
+                  <Icon className="w-6 h-6" fill={isActive(path) ? "currentColor" : "none"} />
+                  {showBadge && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-2 h-2"></span>
+                  )}
+                </div>
+                <span>{label}</span>
+              </Link>
+            );
+          })}
 
           <button
             onClick={() => setShowCreateModal(true)}

@@ -9,6 +9,7 @@ import authReducer from './features/auth/authSlice';
 import themeReducer from './features/theme/themeSlice';
 import messageReducer from './features/message/messageSlice';
 import commentReducer from './features/comment/commentSlice';
+import notificationReducer from './features/notification/notificationSlice';
 
 const rootReducer = combineReducers({
     users: usersReducer,
@@ -16,6 +17,7 @@ const rootReducer = combineReducers({
     theme: themeReducer,
     message: messageReducer,
     comment: commentReducer,
+    notification: notificationReducer,
 });
 
 const persistConfig: PersistConfig<ReturnType<typeof rootReducer>> = {
