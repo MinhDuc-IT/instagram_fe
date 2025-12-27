@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import { RootState } from './redux/store';
@@ -38,9 +38,7 @@ export default function AppContent() {
                     <Route
                         path="/home"
                         element={
-                            <ProtectedRoute>
-                                <Home />
-                            </ProtectedRoute>
+                            <Home />
                         }
                     />
                     <Route

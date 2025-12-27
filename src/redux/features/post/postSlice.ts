@@ -1,17 +1,106 @@
+import { Post } from "@/src/types/post.type";
+import { Story } from "@/src/types/story.type";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export interface postSate {
-
+interface PostState {
+  posts: Post[]
+  //stories: Story[]
+  loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  currentPage: number
+  totalPages: number
 }
 
-const initialState: postSate = {
+const initialState: PostState = {
+  posts: [],
+  //stories: [],
+  loading: false,
+  loadingMore: false,
+  hasMore: true,
+  currentPage: 1,
+  totalPages: 1,
+}
 
-};
-
-export const postSlice = createSlice({
-    name: "post",
-    initialState,
-    reducers: {
-
+const postSlice = createSlice({
+  name: "post",
+  initialState,
+  reducers: {
+    // Initial fetch
+    fetchHomeFeed(state) {
+      state.loading = true
+      state.loadingMore = false
+    //   state.posts = []
+      state.currentPage = 1
+      state.hasMore = true
     },
-});
+
+    fetchHomeFeedSuccess(state, action) {
+      state.posts = action.payload.posts
+      //state.stories = action.payload.stories
+      state.currentPage = action.payload.pagination.currentPage
+      state.totalPages = action.payload.pagination.totalPages
+      state.hasMore = action.payload.pagination.hasMore
+      state.loading = false
+    },
+
+    fetchHomeFeedFailure(state) {
+      state.loading = false
+    },
+
+    fetchMorePosts(state) {
+      if (state.loadingMore) return
+      state.loadingMore = true
+    },
+
+    fetchMorePostsSuccess(state, action) {
+      const existingIds = new Set(state.posts.map(p => p.id))
+      const newPosts = action.payload.posts.filter(
+        (p: Post) => !existingIds.has(p.id)
+      )
+
+      state.posts.push(...newPosts)
+      state.currentPage = action.payload.pagination.currentPage
+      state.totalPages = action.payload.pagination.totalPages
+      state.hasMore = action.payload.pagination.hasMore
+      state.loadingMore = false
+    },
+
+    fetchMorePostsFailure(state) {
+      state.loadingMore = false
+    },
+    // Toggle like
+    toggleLikeOptimistic(state, action: PayloadAction<string>) {
+      const post = state.posts.find(p => p.id === action.payload)
+      if (!post) return
+      post.isLiked = !post.isLiked
+      if (post.likeCount !== undefined && post.likeCount !== null) {
+        post.likeCount = post.likeCount + (post.isLiked ? 1 : -1)
+      }
+    },
+
+    // Toggle save
+    toggleSavePost(
+      state, 
+      action: PayloadAction<{ postId: string; isSaved: boolean }>
+    ) {
+      const post = state.posts.find(p => p.id === action.payload.postId)
+      if (post) {
+        post.isSaved = action.payload.isSaved
+      }
+    },
+  },
+})
+
+export const {
+  fetchHomeFeed,
+  fetchHomeFeedSuccess,
+  fetchHomeFeedFailure,
+  fetchMorePosts,
+  fetchMorePostsSuccess,
+  fetchMorePostsFailure,
+  toggleLikeOptimistic,
+  toggleSavePost,
+} = postSlice.actions
+
+export default postSlice.reducer

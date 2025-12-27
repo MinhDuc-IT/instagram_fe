@@ -1,0 +1,168 @@
+import { useEffect, useState, useRef, useCallback } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { fetchHomeFeed, fetchMorePosts } from "../redux/features/post/postSlice"
+import PostCard from "../components/PostCard"
+import PostModal from "../components/PostModal"
+import StoryBubble from "../components/StoryBubble"
+import { RootState } from "../redux/store"
+import { Post } from "../types/post.type"
+
+export default function Home() {
+  const dispatch = useDispatch()
+  const {
+    posts = [],
+    //stories = [],
+    loading,
+    loadingMore,
+    hasMore,
+    currentPage
+  } = useSelector((state: RootState) => state.post)
+
+  const {
+    stories,
+    loading: storyLoading,
+  } = useSelector((state: RootState) => state.story)
+
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const observerTarget = useRef<HTMLDivElement>(null)
+  const isFetchingRef = useRef(false)
+
+  // Initial load
+  useEffect(() => {
+    dispatch(fetchHomeFeed())
+  }, [dispatch])
+
+  // Infinite scroll observer
+  const lastPageRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const element = observerTarget.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(entries => {
+      const [entry] = entries
+
+      if (
+        entry.isIntersecting &&
+        !loading &&
+        !loadingMore &&
+        hasMore &&
+        posts.length > 0 &&
+        !isFetchingRef.current
+      ) {
+        isFetchingRef.current = true
+        observer.unobserve(element)
+        dispatch(fetchMorePosts())
+      }
+    }, { rootMargin: "200px" })
+
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [dispatch, loading, loadingMore, hasMore, currentPage])
+
+  useEffect(() => {
+    if (currentPage !== lastPageRef.current) {
+      lastPageRef.current = currentPage
+      isFetchingRef.current = false
+    }
+  }, [currentPage])
+
+  return (
+    <div className="max-w-2xl mx-auto py-4 px-4">
+
+      {/* ===== STORIES ===== */}
+      <div className="bg-white border border-gray-300 rounded-sm p-4 mb-6 overflow-x-auto hide-scrollbar">
+        <div className="flex gap-4">
+
+          {loading && (
+            <span className="text-sm text-gray-500">Loading stories...</span>
+          )}
+
+          {!loading && stories.length === 0 && (
+            <div className="flex gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                <div key={i} className="flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {stories.map(story => (
+            <StoryBubble key={story.id} user={story.user} />
+          ))}
+        </div>
+      </div>
+
+      {/* ===== POSTS ===== */}
+      <div>
+
+        {/* Initial loading skeleton */}
+        {loading && posts.length === 0 && (
+          <>
+            <div className="text-center text-gray-500 mb-4">
+              Loading posts...
+            </div>
+            <div className="space-y-6">
+              {[1, 2].map(i => (
+                <div key={i} className="bg-white animate-pulse">
+                  <div className="px-3 py-2 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-300" />
+                    <div className="h-3 w-24 bg-gray-300 rounded" />
+                  </div>
+                  <div className="aspect-square bg-gray-300 border-y border-gray-200" />
+                  <div className="px-3 py-2 space-y-2">
+                    <div className="h-6 w-6 bg-gray-300 rounded" />
+                    <div className="h-3 w-full bg-gray-300 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Posts list */}
+        {!loading && posts.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            No posts to show
+          </div>
+        )}
+
+        {posts.map(post => (
+          <PostCard
+            key={post.id}
+            post={post}
+            onPostClick={setSelectedPost}
+          />
+        ))}
+
+        {/* Infinite scroll trigger */}
+        {hasMore && (
+          <div ref={observerTarget} className="py-8">
+            {loadingMore && (
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* End of posts message */}
+        {!loading && !hasMore && posts.length > 0 && (
+          <div className="text-center py-8 text-gray-500 text-sm">
+            You're all caught up! 🎉
+          </div>
+        )}
+      </div>
+
+      {/* Post Modal */}
+      {selectedPost && (
+        <PostModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
+    </div>
+  )
+}

@@ -9,6 +9,8 @@ import authReducer from './features/auth/authSlice';
 import themeReducer from './features/theme/themeSlice';
 import messageReducer from './features/message/messageSlice';
 import commentReducer from './features/comment/commentSlice';
+import postReducer from './features/post/postSlice';
+import storyReducer from './features/story/storySlice';
 
 const rootReducer = combineReducers({
     users: usersReducer,
@@ -16,6 +18,8 @@ const rootReducer = combineReducers({
     theme: themeReducer,
     message: messageReducer,
     comment: commentReducer,
+    post: postReducer,
+    story: storyReducer,
 });
 
 const persistConfig: PersistConfig<ReturnType<typeof rootReducer>> = {

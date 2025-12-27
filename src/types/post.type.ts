@@ -37,7 +37,9 @@ export interface Post {
   isCommentsDisabled?: boolean;
   media: Media[];
   timestamp?: string; // createdDate từ BE
+  createdDate?: string; // createdDate từ BE
   likes?: number;
+  likeCount?: number;
   comments?: Comment[];
   commentsCount?: number;
   isLiked?: boolean;
