@@ -1,166 +1,56 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Heart, MessageCircle, Loader, X, Smile } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { MessageCircle, Loader, X, Smile } from 'lucide-react';
 import Tippy from '@tippyjs/react/headless';
 
 import 'tippy.js/dist/tippy.css';
-import { DataUtil } from '../../utils/DataUtil';
 import { CommentService } from '../../service/commentService';
 import { usePostComments } from '../../hooks/usePostComments';
-import { createCommentRequest } from '../../redux/features/comment/commentSlice';
+import { createCommentRequest, getCommentsRequest, updateLikeComment } from '../../redux/features/comment/commentSlice';
+import CommentItem from '../Comment/CommentItem';
+import { COMMENTS_PAGE_SIZE } from '../../constants/filters';
 
 type CommentProps = {
     reel: any;
     showComments: boolean;
     setShowComments: (v: boolean) => void;
     avatarUrl?: string | null;
-    handleClickComment: (reel: any) => void;
+    handleClickComment: () => void;
 };
 
 function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickComment }: CommentProps) {
     const dispatch = useDispatch();
-    const { user } = useSelector((state: any) => state.auth || {});
+    const loading = useSelector((state: any) => state.comment.loading);
+    const comments = useSelector((state: any) => state.comment.comments);
+    const cursor = useSelector((state: any) => state.comment.cursor);
+    const hasMore = useSelector((state: any) => state.comment.hasMore);
     const [replyTo, setReplyTo] = useState<string | null>(null);
     const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
-    const [comments, setComments] = useState<any[]>([]);
     const [commentText, setCommentText] = useState<string>('');
-    const [loading, setLoading] = useState(false);
     const [posting, setPosting] = useState(false);
     const [rootCommentId, setRootCommentId] = useState<number>(0);
-    const [cursor, setCursor] = useState<string | undefined>(undefined);
-    const [hasMore, setHasMore] = useState(true);
     const commentsListRef = useRef<HTMLDivElement>(null);
 
-    // Track replies state cho từng comment: { commentId: { replies, cursor, hasMore, loading } }
-    const [repliesState, setRepliesState] = useState<Record<string, any>>({});
+    usePostComments(reel?.id, showComments);
 
-    // Callback khi nhận comment mới từ socket
-    const handleCommentAdded = useCallback((incoming: any) => {
-        // 1) Cập nhật danh sách comments (top-level) hoặc tăng repliesCount nếu là reply
-        setComments((prev) => {
-            // Tránh duplicate
-            if (prev.some((c) => c.id === incoming.id)) return prev;
-
-            const isReply = !!incoming?.replyToUser;
-            if (!isReply) {
-                // Comment gốc → prepend vào danh sách
-                return [incoming, ...prev];
-            }
-
-            // Là reply → tăng repliesCount cho comment gốc nếu đang có trong list
-            const rootId = incoming?.rootCommentId ?? incoming?.rootId ?? incoming?.root ?? null;
-            if (!rootId) return prev;
-
-            return prev.map((c) =>
-                c.id === rootId ? { ...c, repliesCount: (c.repliesCount || 0) + 1 } : c,
-            );
-        });
-
-        // 2) Nếu đang mở replies của comment gốc thì append thêm vào repliesState để hiển thị realtime
-        const rootId = incoming?.rootCommentId ?? incoming?.rootId ?? incoming?.root ?? null;
-        if (!rootId) return;
-
-        setRepliesState((prev) => {
-            const key = rootId.toString();
-            const state = prev[key];
-            if (!state) return prev; // chưa mở replies → không ép mở
-
-            // Tránh duplicate trong replies
-            if (state?.replies?.some((r: any) => r.id === incoming.id)) return prev;
-
-            return {
-                ...prev,
-                [key]: {
-                    ...state,
-                    replies: [...(state.replies || []), incoming],
-                },
-            };
-        });
-    }, []);
-
-    // Callback khi comment bị xóa từ socket
-    const handleCommentDeleted = useCallback(
-        (commentId: string) => {
-            // 1) Thử xóa ở top-level; nếu không thấy, có thể là reply → giảm repliesCount cho parent nếu tìm thấy trong repliesState
-            setComments((prev) => {
-                // Nếu xóa được ở top-level thì trả về list đã filter
-                if (prev.some((c) => c.id === commentId)) {
-                    return prev.filter((c) => c.id !== commentId);
-                }
-
-                // Không phải top-level → duyệt qua repliesState để giảm repliesCount cho parent nếu có
-                const next = prev.map((c) => {
-                    const key = c.id?.toString?.() ?? '';
-                    const rs = repliesState[key];
-                    if (rs?.replies?.some?.((r: any) => r.id === commentId)) {
-                        return { ...c, repliesCount: Math.max(0, (c.repliesCount || 0) - 1) };
-                    }
-                    return c;
-                });
-                return next;
-            });
-
-            // 2) Xóa trong repliesState nếu nó là reply
-            setRepliesState((prev) => {
-                const next = { ...prev } as Record<string, any>;
-                for (const key of Object.keys(next)) {
-                    const state = next[key];
-                    if (!state?.replies) continue;
-                    if (state.replies.some((r: any) => r.id === commentId)) {
-                        next[key] = { ...state, replies: state.replies.filter((r: any) => r.id !== commentId) };
-                        break;
-                    }
-                }
-                return next;
-            });
-        },
-        [repliesState],
-    );
-
-    usePostComments(reel?.id, showComments, handleCommentAdded, handleCommentDeleted);
-
-    // Fetch comments khi mở popup
     useEffect(() => {
         if (!showComments) return;
 
         const fetchComments = async () => {
-            setLoading(true);
-            try {
-                const response = await CommentService.getComments(reel.id, 20);
-                setComments(response.comments);
-                setCursor(response.nextCursor);
-                setHasMore(response.hasMore);
-            } catch (error) {
-                console.error('Failed to fetch comments:', error);
-                setComments([]);
-            } finally {
-                setLoading(false);
-            }
+            dispatch(getCommentsRequest({ postId: reel.id, page: COMMENTS_PAGE_SIZE }));
         };
 
         fetchComments();
     }, [reel.id, showComments]);
 
-    // Handle scroll để load thêm comments
     const handleCommentsScroll = async (e: React.UIEvent<HTMLDivElement>) => {
         const element = e.currentTarget;
         const { scrollHeight, scrollTop, clientHeight } = element;
         const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
 
         if (isNearBottom && hasMore && !loading && cursor) {
-            setLoading(true);
-            try {
-                const response = await CommentService.getComments(reel.id, 20, cursor);
-                setComments((prev) => [...prev, ...response.comments]);
-                setCursor(response.nextCursor);
-                setHasMore(response.hasMore);
-            } catch (error) {
-                console.error('Failed to load more comments:', error);
-            } finally {
-                setLoading(false);
-            }
+            dispatch(getCommentsRequest({ postId: reel.id, page: COMMENTS_PAGE_SIZE, cursor }));
         }
     };
 
@@ -178,122 +68,23 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
         }, 0);
     };
 
-    const handleViewReplies = async (comment: any) => {
-        const commentId = comment.id.toString();
-
-        // Nếu đã load, toggle show/hide
-        if (repliesState[commentId]) {
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: {
-                    ...prev[commentId],
-                    isShowing: !prev[commentId].isShowing,
-                },
-            }));
-            return;
-        }
-
-        // Load replies lần đầu
-        setRepliesState((prev) => ({
-            ...prev,
-            [commentId]: { replies: [], loading: true, cursor: undefined, hasMore: true, isShowing: true },
-        }));
-
-        try {
-            const response = await CommentService.getReplies(reel.id, comment.id, 3);
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: {
-                    replies: response.comments || [],
-                    loading: false,
-                    cursor: response.nextCursor,
-                    hasMore: response.hasMore,
-                    total: response.total,
-                    isShowing: true,
-                },
-            }));
-        } catch (error) {
-            console.error('Failed to fetch replies:', error);
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: { replies: [], loading: false, cursor: undefined, hasMore: false, isShowing: true },
-            }));
-        }
-    };
-
-    const handleLoadMoreReplies = async (comment: any) => {
-        const commentId = comment.id.toString();
-        const state = repliesState[commentId];
-
-        if (!state || !state.cursor || state.loading) return;
-
-        setRepliesState((prev) => ({
-            ...prev,
-            [commentId]: { ...prev[commentId], loading: true },
-        }));
-
-        try {
-            const response = await CommentService.getReplies(reel.id, comment.id, 3, state.cursor);
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: {
-                    replies: [...(prev[commentId]?.replies || []), ...response.comments],
-                    loading: false,
-                    cursor: response.nextCursor,
-                    hasMore: response.hasMore,
-                    isShowing: true,
-                },
-            }));
-        } catch (error) {
-            console.error('Failed to load more replies:', error);
-        }
-    };
-
-    const handleLikeReply = async (postId: string, replyId: string, commentId: string) => {
-        try {
-            await CommentService.likeComment(postId, replyId);
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: {
-                    ...prev[commentId],
-                    replies: prev[commentId].replies.map((r: any) =>
-                        r.id === replyId
-                            ? {
-                                  ...r,
-                                  isLiked: !r.isLiked,
-                                  likesCount: r.isLiked ? r.likesCount - 1 : r.likesCount + 1,
-                              }
-                            : r,
-                    ),
-                },
-            }));
-        } catch (error) {
-            console.error('Failed to like reply:', error);
-        }
-    };
-
     const handleLikeComment = async (postId: string, commentId: string) => {
         try {
             await CommentService.likeComment(postId, commentId);
-            // Toggle isLiked trong comment state
-            setComments((prev) =>
-                prev.map((c) =>
-                    c.id === commentId
-                        ? {
-                              ...c,
-                              isLiked: !c.isLiked,
-                              likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
-                          }
-                        : c,
-                ),
+            const commentsAfterLike = comments.map((c: any) =>
+                c.id === commentId
+                    ? {
+                          ...c,
+                          isLiked: !c.isLiked,
+                          likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
+                      }
+                    : c,
             );
+            dispatch(updateLikeComment({ comments: commentsAfterLike }));
         } catch (error) {
             console.error('Failed to like comment:', error);
         }
     };
-
-    // console.log('Rendering Comment component with comments:', comments);
-    // console.log('Replies state:', repliesState);
 
     const clearReply = () => {
         setReplyTo(null);
@@ -394,165 +185,14 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
                             ) : comments?.length > 0 ? (
                                 <>
                                     {comments.map((c: any, idx: number) => (
-                                        <div key={idx} className="flex gap-3 py-3">
-                                            <img
-                                                src={c?.userAvatar || `https://i.pravatar.cc/150?img=${idx + 10}`}
-                                                alt={c?.username || 'User avatar'}
-                                                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                            />
-                                            <div className="flex-1">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="flex-1">
-                                                        <span className="font-semibold text-sm">{c?.username}</span>
-                                                        <span className="ml-[5px] text-gray-500 text-xs">
-                                                            {DataUtil.formatCommentTime(c?.createdAt)}
-                                                        </span>
-                                                        <p className="text-sm mt-1">{c?.text}</p>
-                                                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                                            <span>{c?.likesCount || 0} likes</span>
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleReplyComment(c.id, c.id, c?.username)
-                                                                }
-                                                                className="font-semibold"
-                                                            >
-                                                                Reply
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleLikeComment(reel.id, c.id)}
-                                                        className="p-1"
-                                                    >
-                                                        <Heart
-                                                            className={`w-4 h-4 ${c?.isLiked ? 'text-[#fc323e]' : 'text-black'}`}
-                                                            fill={c?.isLiked ? '#fc323e' : 'none'}
-                                                        />
-                                                    </button>
-                                                </div>
-
-                                                {/* View replies button - trên cùng, chỉ show khi chưa mở */}
-                                                {c?.repliesCount > 0 && !repliesState[c.id.toString()]?.isShowing && (
-                                                    <button
-                                                        onClick={() => handleViewReplies(c)}
-                                                        className="flex items-center gap-2 mt-2 text-xs text-gray-500 hover:text-gray-700"
-                                                    >
-                                                        <div className="w-6 h-px bg-gray-300" />
-                                                        <span>View all {c?.repliesCount || 0} replies</span>
-                                                    </button>
-                                                )}
-
-                                                {/* Hiển thị replies inline */}
-                                                {repliesState[c.id.toString()]?.isShowing && (
-                                                    <div className="mt-2 space-y-2 border-gray-200">
-                                                        {/* Hide replies button - top của replies */}
-                                                        <button
-                                                            onClick={() => handleViewReplies(c)}
-                                                            className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700"
-                                                        >
-                                                            <div className="w-6 h-px bg-gray-300" />
-                                                            <span>Hide all replies</span>
-                                                        </button>
-
-                                                        {repliesState[c.id.toString()]?.replies?.map((reply: any) => (
-                                                            <div key={reply.id} className="flex gap-2">
-                                                                <img
-                                                                    src={
-                                                                        reply?.userAvatar ||
-                                                                        `https://i.pravatar.cc/150?img=${reply.userId}`
-                                                                    }
-                                                                    alt={reply?.username}
-                                                                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                                                />
-                                                                <div className="flex-1 text-xs">
-                                                                    <div className="flex items-start justify-between gap-1">
-                                                                        <div className="flex-1">
-                                                                            <span className="font-semibold text-sm">
-                                                                                {reply?.username}
-                                                                            </span>
-                                                                            <span className="ml-1 text-gray-500">
-                                                                                {DataUtil.formatCommentTime(
-                                                                                    reply?.createdAt,
-                                                                                )}
-                                                                            </span>
-                                                                            <p className="text-sm mt-1">
-                                                                                {reply?.replyToUser ? (
-                                                                                    <>
-                                                                                        <Link
-                                                                                            to={`/profile/${reply?.replyToUser?.id}`}
-                                                                                            className="text-blue-500 font-semibold hover:underline"
-                                                                                        >
-                                                                                            @
-                                                                                            {
-                                                                                                reply?.replyToUser
-                                                                                                    ?.userName
-                                                                                            }
-                                                                                        </Link>{' '}
-                                                                                    </>
-                                                                                ) : null}
-                                                                                {reply?.text}
-                                                                            </p>
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                handleLikeReply(
-                                                                                    reel.id,
-                                                                                    reply.id,
-                                                                                    c.id.toString(),
-                                                                                )
-                                                                            }
-                                                                            className="p-1 flex-shrink-0"
-                                                                        >
-                                                                            <Heart
-                                                                                className={`w-4 h-4 ${reply?.isLiked ? 'text-[#fc323e]' : 'text-gray-400'}`}
-                                                                                fill={
-                                                                                    reply?.isLiked ? '#fc323e' : 'none'
-                                                                                }
-                                                                            />
-                                                                        </button>
-                                                                    </div>
-                                                                    {/* Reply và Like buttons cho replies */}
-                                                                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                                                        <span className="text-xs">
-                                                                            {DataUtil.formatlikeCount(
-                                                                                reply?.likesCount || 0,
-                                                                            )}{' '}
-                                                                            {reply?.likesCount > 1 ? 'likes' : 'like'}
-                                                                        </span>
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                handleReplyComment(
-                                                                                    reply.id,
-                                                                                    reply.rootCommentId,
-                                                                                    reply?.username,
-                                                                                )
-                                                                            }
-                                                                            className="hover:text-gray-700 text-xs"
-                                                                        >
-                                                                            Reply
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-
-                                                        {/* Load more replies button - chỉ show khi còn replies */}
-                                                        {repliesState[c.id.toString()]?.hasMore && (
-                                                            <button
-                                                                onClick={() => handleLoadMoreReplies(c)}
-                                                                disabled={repliesState[c.id.toString()]?.loading}
-                                                                className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 font-semibold pl-8"
-                                                            >
-                                                                <div className="w-6 h-px bg-gray-300" />
-                                                                {repliesState[c.id.toString()]?.loading
-                                                                    ? 'Loading...'
-                                                                    : 'View more replies'}
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                        <CommentItem
+                                            key={c?.id || idx}
+                                            c={c}
+                                            idx={idx}
+                                            reel={reel}
+                                            handleReplyComment={handleReplyComment}
+                                            handleLikeComment={handleLikeComment}
+                                        />
                                     ))}
                                     {loading && (
                                         <div className="text-center py-2">
@@ -616,7 +256,7 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
                     </div>
                 )}
             >
-                <button onClick={() => handleClickComment(reel)} className="flex flex-col items-center">
+                <button onClick={() => handleClickComment()} className="flex flex-col items-center">
                     <MessageCircle className="w-7 h-7 text-black" />
                     <span className="text-black text-xs mt-1">{reel?.commentsCount?.toLocaleString?.() || 0}</span>
                 </button>
