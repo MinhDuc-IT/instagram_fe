@@ -1,14 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Heart, MessageCircle, Loader, X, Smile } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { MessageCircle, Loader, X, Smile } from 'lucide-react';
 import Tippy from '@tippyjs/react/headless';
 
 import 'tippy.js/dist/tippy.css';
-import { DataUtil } from '../../utils/DataUtil';
 import { CommentService } from '../../service/commentService';
 import { usePostComments } from '../../hooks/usePostComments';
-import { createCommentRequest } from '../../redux/features/comment/commentSlice';
+import { createCommentRequest, getCommentsRequest } from '../../redux/features/comment/commentSlice';
 import CommentItem from '../Comment/CommentItem';
 
 type CommentProps = {
@@ -21,145 +19,37 @@ type CommentProps = {
 
 function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickComment }: CommentProps) {
     const dispatch = useDispatch();
+    const loading = useSelector((state: any) => state.comment.loading);
+    const comments = useSelector((state: any) => state.comment.comments);
+    const cursor = useSelector((state: any) => state.comment.cursor);
+    const hasMore = useSelector((state: any) => state.comment.hasMore);
     const [replyTo, setReplyTo] = useState<string | null>(null);
     const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
-    const [comments, setComments] = useState<any[]>([]);
     const [commentText, setCommentText] = useState<string>('');
-    const [loading, setLoading] = useState(false);
     const [posting, setPosting] = useState(false);
     const [rootCommentId, setRootCommentId] = useState<number>(0);
-    const [cursor, setCursor] = useState<string | undefined>(undefined);
-    const [hasMore, setHasMore] = useState(true);
     const commentsListRef = useRef<HTMLDivElement>(null);
 
-    // Track replies state cho từng comment: { commentId: { replies, cursor, hasMore, loading } }
-    const [repliesState, setRepliesState] = useState<Record<string, any>>({});
+    usePostComments(reel?.id, showComments);
 
-    // Callback khi nhận comment mới từ socket
-    const handleCommentAdded = useCallback((incoming: any) => {
-        // 1) Cập nhật danh sách comments (top-level) hoặc tăng repliesCount nếu là reply
-        setComments((prev) => {
-            // Tránh duplicate
-            if (prev.some((c) => c.id === incoming.id)) return prev;
-
-            const isReply = !!incoming?.replyToUser;
-            if (!isReply) {
-                // Comment gốc → prepend vào danh sách
-                return [incoming, ...prev];
-            }
-
-            // Là reply → tăng repliesCount cho comment gốc nếu đang có trong list
-            const rootId = incoming?.rootCommentId ?? incoming?.rootId ?? incoming?.root ?? null;
-            if (!rootId) return prev;
-
-            return prev.map((c) => (c.id === rootId ? { ...c, repliesCount: (c.repliesCount || 0) + 1 } : c));
-        });
-
-        // 2) Nếu đang mở replies của comment gốc thì append thêm vào repliesState để hiển thị realtime
-        const rootId = incoming?.rootCommentId ?? incoming?.rootId ?? incoming?.root ?? null;
-        if (!rootId) return;
-
-        setRepliesState((prev) => {
-            const key = rootId.toString();
-            const state = prev[key];
-            if (!state) return prev; // chưa mở replies → không ép mở
-
-            // Tránh duplicate trong replies
-            if (state?.replies?.some((r: any) => r.id === incoming.id)) return prev;
-
-            return {
-                ...prev,
-                [key]: {
-                    ...state,
-                    replies: [...(state.replies || []), incoming],
-                },
-            };
-        });
-    }, []);
-
-    // Callback khi comment bị xóa từ socket
-    const handleCommentDeleted = useCallback(
-        (commentId: string) => {
-            // 1) Thử xóa ở top-level; nếu không thấy, có thể là reply → giảm repliesCount cho parent nếu tìm thấy trong repliesState
-            setComments((prev) => {
-                // Nếu xóa được ở top-level thì trả về list đã filter
-                if (prev.some((c) => c.id === commentId)) {
-                    return prev.filter((c) => c.id !== commentId);
-                }
-
-                // Không phải top-level → duyệt qua repliesState để giảm repliesCount cho parent nếu có
-                const next = prev.map((c) => {
-                    const key = c.id?.toString?.() ?? '';
-                    const rs = repliesState[key];
-                    if (rs?.replies?.some?.((r: any) => r.id === commentId)) {
-                        return { ...c, repliesCount: Math.max(0, (c.repliesCount || 0) - 1) };
-                    }
-                    return c;
-                });
-                return next;
-            });
-
-            // 2) Xóa trong repliesState nếu nó là reply
-            setRepliesState((prev) => {
-                const next = { ...prev } as Record<string, any>;
-                for (const key of Object.keys(next)) {
-                    const state = next[key];
-                    if (!state?.replies) continue;
-                    if (state.replies.some((r: any) => r.id === commentId)) {
-                        next[key] = { ...state, replies: state.replies.filter((r: any) => r.id !== commentId) };
-                        break;
-                    }
-                }
-                return next;
-            });
-        },
-        [repliesState],
-    );
-
-    usePostComments(reel?.id, showComments, handleCommentAdded, handleCommentDeleted);
-
-    // Fetch comments khi mở popup
     useEffect(() => {
         if (!showComments) return;
-        // setRepliesState({});
 
         const fetchComments = async () => {
-            setLoading(true);
-            try {
-                const response = await CommentService.getComments(reel.id, 20);
-                setComments(response.comments);
-                setCursor(response.nextCursor);
-                setHasMore(response.hasMore);
-            } catch (error) {
-                console.error('Failed to fetch comments:', error);
-                setComments([]);
-            } finally {
-                setLoading(false);
-            }
+            dispatch(getCommentsRequest({ postId: reel.id, page: 3 }));
         };
 
         fetchComments();
     }, [reel.id, showComments]);
 
-    // Handle scroll để load thêm comments
     const handleCommentsScroll = async (e: React.UIEvent<HTMLDivElement>) => {
         const element = e.currentTarget;
         const { scrollHeight, scrollTop, clientHeight } = element;
         const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
 
         if (isNearBottom && hasMore && !loading && cursor) {
-            setLoading(true);
-            try {
-                const response = await CommentService.getComments(reel.id, 20, cursor);
-                setComments((prev) => [...prev, ...response.comments]);
-                setCursor(response.nextCursor);
-                setHasMore(response.hasMore);
-            } catch (error) {
-                console.error('Failed to load more comments:', error);
-            } finally {
-                setLoading(false);
-            }
+            dispatch(getCommentsRequest({ postId: reel.id, page: 3, cursor }));
         }
     };
 
@@ -177,122 +67,25 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
         }, 0);
     };
 
-    // const handleViewReplies = async (comment: any) => {
-    //     const commentId = comment.id.toString();
-
-    //     // Nếu đã load, toggle show/hide
-    //     if (repliesState[commentId]) {
-    //         setRepliesState((prev) => ({
-    //             ...prev,
-    //             [commentId]: {
-    //                 ...prev[commentId],
-    //                 isShowing: !prev[commentId].isShowing,
-    //             },
-    //         }));
-    //         return;
-    //     }
-
-    //     // Load replies lần đầu
-    //     setRepliesState((prev) => ({
-    //         ...prev,
-    //         [commentId]: { replies: [], loading: true, cursor: undefined, hasMore: false, isShowing: true },
-    //     }));
-
-    //     try {
-    //         const response = await CommentService.getReplies(reel.id, comment.id, 3);
-    //         setRepliesState((prev) => ({
-    //             ...prev,
-    //             [commentId]: {
-    //                 replies: response.comments || [],
-    //                 loading: false,
-    //                 cursor: response.nextCursor,
-    //                 hasMore: response.hasMore,
-    //                 total: response.total,
-    //                 isShowing: true,
-    //             },
-    //         }));
-    //     } catch (error) {
-    //         console.error('Failed to fetch replies:', error);
-    //         setRepliesState((prev) => ({
-    //             ...prev,
-    //             [commentId]: { replies: [], loading: false, cursor: undefined, hasMore: false, isShowing: true },
-    //         }));
-    //     }
-    // };
-
-    // const handleLoadMoreReplies = async (comment: any) => {
-    //     const commentId = comment.id.toString();
-    //     const state = repliesState[commentId];
-
-    //     if (!state || !state.cursor || state.loading) return;
-
-    //     setRepliesState((prev) => ({
-    //         ...prev,
-    //         [commentId]: { ...prev[commentId], loading: true },
-    //     }));
-
-    //     try {
-    //         const response = await CommentService.getReplies(reel.id, comment.id, 3, state.cursor);
-    //         setRepliesState((prev) => ({
-    //             ...prev,
-    //             [commentId]: {
-    //                 replies: [...(prev[commentId]?.replies || []), ...response.comments],
-    //                 loading: false,
-    //                 cursor: response.nextCursor,
-    //                 hasMore: response.hasMore,
-    //                 isShowing: true,
-    //             },
-    //         }));
-    //     } catch (error) {
-    //         console.error('Failed to load more replies:', error);
-    //     }
-    // };
-
-    // const handleLikeReply = async (postId: string, replyId: string, commentId: string) => {
-    //     try {
-    //         await CommentService.likeComment(postId, replyId);
-    //         setRepliesState((prev) => ({
-    //             ...prev,
-    //             [commentId]: {
-    //                 ...prev[commentId],
-    //                 replies: prev[commentId].replies.map((r: any) =>
-    //                     r.id === replyId
-    //                         ? {
-    //                               ...r,
-    //                               isLiked: !r.isLiked,
-    //                               likesCount: r.isLiked ? r.likesCount - 1 : r.likesCount + 1,
-    //                           }
-    //                         : r,
-    //                 ),
-    //             },
-    //         }));
-    //     } catch (error) {
-    //         console.error('Failed to like reply:', error);
-    //     }
-    // };
-
     const handleLikeComment = async (postId: string, commentId: string) => {
         try {
             await CommentService.likeComment(postId, commentId);
             // Toggle isLiked trong comment state
-            setComments((prev) =>
-                prev.map((c) =>
-                    c.id === commentId
-                        ? {
-                              ...c,
-                              isLiked: !c.isLiked,
-                              likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
-                          }
-                        : c,
-                ),
-            );
+            // setComments((prev) =>
+            //     prev.map((c) =>
+            //         c.id === commentId
+            //             ? {
+            //                   ...c,
+            //                   isLiked: !c.isLiked,
+            //                   likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
+            //               }
+            //             : c,
+            //     ),
+            // );
         } catch (error) {
             console.error('Failed to like comment:', error);
         }
     };
-
-    // console.log('Rendering Comment component with comments:', comments);
-    // console.log('Replies state:', repliesState);
 
     const clearReply = () => {
         setReplyTo(null);
@@ -394,16 +187,12 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
                                 <>
                                     {comments.map((c: any, idx: number) => (
                                         <CommentItem
-                                            key={c.id}
+                                            key={c?.id || idx}
                                             c={c}
                                             idx={idx}
                                             reel={reel}
-                                            // repliesState={repliesState}
                                             handleReplyComment={handleReplyComment}
                                             handleLikeComment={handleLikeComment}
-                                            // handleViewReplies={handleViewReplies}
-                                            // handleLikeReply={handleLikeReply}
-                                            // handleLoadMoreReplies={handleLoadMoreReplies}
                                         />
                                     ))}
                                     {loading && (

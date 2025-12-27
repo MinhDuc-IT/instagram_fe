@@ -1,19 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { getSocket } from '../utils/socket';
+import { useDispatch } from 'react-redux';
+
+import { addCommentFromSocket } from '../redux/features/comment/commentSlice';
 
 export const usePostComments = (
     postId: string,
     showComments: boolean,
-    onCommentAdded?: (comment: any) => void,
-    onCommentDeleted?: (commentId: string) => void,
 ) => {
+    const dispatch = useDispatch();
     const socketRef = useRef<any>(null);
     const listenersRef = useRef<{ added?: any; deleted?: any }>({});
 
     useEffect(() => {
         if (!postId || !showComments) return;
 
-        const socket = getSocket(); // ✅ Dùng chung socket /messages
+        const socket = getSocket();
 
         if (!socket) {
             console.warn('Socket not initialized');
@@ -42,15 +44,16 @@ export const usePostComments = (
         const handleCommentAdded = (data: any) => {
             if (data.postId === postId) {
                 console.log('📝 New comment received:', data.comment);
-                onCommentAdded?.(data.comment);
+                // onCommentAdded?.(data.comment);
+                dispatch(addCommentFromSocket(data.comment));
             }
         };
 
         const handleCommentDeleted = (data: any) => {
-            if (data.postId === postId) {
-                console.log('🗑️ Comment deleted:', data.commentId);
-                onCommentDeleted?.(data.commentId);
-            }
+            // if (data.postId === postId) {
+            //     console.log('🗑️ Comment deleted:', data.commentId);
+            //     onCommentDeleted?.(data.commentId);
+            // }
         };
 
         // ✅ Ghi danh lắng nghe

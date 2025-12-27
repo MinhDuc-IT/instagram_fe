@@ -1,136 +1,76 @@
 import React, { useEffect, useState } from 'react';
-import { CommentService } from '../../service/commentService';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { Heart, Loader } from 'lucide-react';
+
+import { CommentService } from '../../service/commentService';
 import { DataUtil } from '../../utils/DataUtil';
-
-type RepliesStateItem = {
-    isShowing: boolean;
-    replies: any[];
-    hasMore: boolean;
-    loading: boolean;
-};
-
-// type RepliesState = Record<string, RepliesStateItem>;
+import { getRepliesRequest, toggleRepliesVisibility, updateReplies } from '../../redux/features/comment/commentSlice';
 
 type CommentItemProps = {
     c: any;
     idx: number;
     reel: any;
-    // repliesState: RepliesState;
     handleReplyComment: (commentId: string, rootCommentId: number, username: string) => void;
     handleLikeComment: (reelId: any, commentId: any) => void;
-    // handleViewReplies: (comment: any) => void;
-    // handleLikeReply: (reelId: any, replyId: any, commentKey: string) => void;
-    // handleLoadMoreReplies: (comment: any) => void;
 };
 
-export default function CommentItem({
-    c,
-    idx,
-    reel,
-    // repliesState,
-    handleReplyComment,
-    handleLikeComment,
-    // handleViewReplies,
-    // handleLikeReply,
-    // handleLoadMoreReplies,
-}: CommentItemProps) {
-    const [repliesState, setRepliesState] = useState<Record<string, any>>({});
+export default function CommentItem({ c, idx, reel, handleReplyComment, handleLikeComment }: CommentItemProps) {
+    const dispatch = useDispatch();
+    const repliesState = useSelector((state: any) => state.comment.repliesComments);
 
-    useEffect(() => {
-        setRepliesState({});
-    }, []);
-
-    const handleViewReplies = async (comment: any) => {
+    const handleViewReplies = (comment: any) => {
         const commentId = comment.id.toString();
 
         // Nếu đã load, toggle show/hide
         if (repliesState[commentId]) {
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: {
-                    ...prev[commentId],
-                    isShowing: !prev[commentId].isShowing,
-                },
-            }));
+            dispatch(toggleRepliesVisibility({ commentId }));
             return;
         }
 
         // Load replies lần đầu
-        setRepliesState((prev) => ({
-            ...prev,
-            [commentId]: { replies: [], loading: true, cursor: undefined, hasMore: false, isShowing: true },
-        }));
-
-        try {
-            const response = await CommentService.getReplies(reel.id, comment.id, 3);
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: {
-                    replies: response.comments || [],
-                    loading: false,
-                    cursor: response.nextCursor,
-                    hasMore: response.hasMore,
-                    total: response.total,
-                    isShowing: true,
-                },
-            }));
-        } catch (error) {
-            console.error('Failed to fetch replies:', error);
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: { replies: [], loading: false, cursor: undefined, hasMore: false, isShowing: true },
-            }));
-        }
+        dispatch(
+            getRepliesRequest({
+                postId: reel.id,
+                commentId: comment.id,
+                page: 3,
+                cursor: undefined,
+            }),
+        );
     };
 
-    const handleLoadMoreReplies = async (comment: any) => {
+    const handleLoadMoreReplies = (comment: any) => {
         const commentId = comment.id.toString();
         const state = repliesState[commentId];
 
         if (!state || !state.cursor || state.loading) return;
 
-        setRepliesState((prev) => ({
-            ...prev,
-            [commentId]: { ...prev[commentId], loading: true },
-        }));
-
-        try {
-            const response = await CommentService.getReplies(reel.id, comment.id, 3, state.cursor);
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: {
-                    replies: [...(prev[commentId]?.replies || []), ...response.comments],
-                    loading: false,
-                    cursor: response.nextCursor,
-                    hasMore: response.hasMore,
-                    isShowing: true,
-                },
-            }));
-        } catch (error) {
-            console.error('Failed to load more replies:', error);
-        }
+        dispatch(
+            getRepliesRequest({
+                postId: reel.id,
+                commentId: comment.id,
+                page: 20,
+                cursor: state.cursor,
+            }),
+        );
     };
 
     const handleLikeReply = async (postId: string, replyId: string, commentId: string) => {
         try {
             await CommentService.likeComment(postId, replyId);
-            setRepliesState((prev) => ({
-                ...prev,
-                [commentId]: {
-                    ...prev[commentId],
-                    replies: prev[commentId].replies.map((r: any) =>
-                        r.id === replyId
-                            ? {
-                                  ...r,
-                                  isLiked: !r.isLiked,
-                                  likesCount: r.isLiked ? r.likesCount - 1 : r.likesCount + 1,
-                              }
-                            : r,
-                    ),
-                },
-            }));
+            // Update replies state
+            const replies = repliesState[commentId]?.replies || [];
+            const updatedReplies = replies.map((r: any) =>
+                r.id === replyId
+                    ? {
+                          ...r,
+                          isLiked: !r.isLiked,
+                          likesCount: r.isLiked ? r.likesCount - 1 : r.likesCount + 1,
+                      }
+                    : r,
+            );
+
+            dispatch(updateReplies({ commentId, replies: updatedReplies }));
         } catch (error) {
             console.error('Failed to like reply:', error);
         }
@@ -182,7 +122,7 @@ export default function CommentItem({
                     </button>
                 )}
 
-                {repliesState[c.id.toString()]?.isShowing && (
+                {c.id && repliesState[c.id.toString()]?.isShowing && (
                     <div className="mt-2 space-y-2 border-gray-200">
                         <button
                             onClick={() => handleViewReplies(c)}
