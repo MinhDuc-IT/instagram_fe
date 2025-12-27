@@ -50,8 +50,8 @@ export default function Profile() {
   const isOwnProfile = userId === currentUser.id.toString();
 
   // Filter saved posts (only for own profile)
-  console.log("Filtering saved posts for own profile:", isOwnProfile);
-  console.log("User posts:", userPosts);
+  // console.log("Filtering saved posts for own profile:", isOwnProfile);
+  // console.log("User posts:", userPosts);
   const filteredSavedPosts = isOwnProfile ? userPosts.filter((post: Post) => post.isSaved) : [];
 
   // const handleEditSubmit = (e: FormEvent) => {
