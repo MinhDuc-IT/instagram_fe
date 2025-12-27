@@ -107,7 +107,7 @@ export default function Home() {
     <div className="max-w-2xl mx-auto py-4 px-4">
 
       {/* ===== STORIES ===== */}
-      <div className="bg-white border rounded-sm p-4 mb-6 overflow-x-auto">
+      <div className="bg-white p-4 mb-6 overflow-x-auto">
         <div className="flex gap-4">
 
           {/* ADD STORY */}
