@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { ToastContainer } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import { RootState } from './redux/store';
+import { useNotifications } from './hooks/useNotifications';
 
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -19,6 +20,9 @@ import SocialLogin from './pages/SocialLogin';
 
 export default function AppContent() {
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+    
+    // Khởi tạo socket connection cho notifications
+    useNotifications();
 
     return (
         <BrowserRouter>

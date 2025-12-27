@@ -94,6 +94,39 @@ export default function MessageBox({ chat }) {
         }
     }, [selectedConversationId, loading, messages.length]);
 
+    // Tự động cuộn xuống khi có tin nhắn mới (không phải khi đang tải thêm tin nhắn cũ)
+    const previousMessagesLengthRef = useRef(0);
+    useEffect(() => {
+        if (
+            messagesContainerRef.current &&
+            !loading &&
+            !loadingMore &&
+            !isLoadingMoreRef.current &&
+            messages.length > previousMessagesLengthRef.current
+        ) {
+            const container = messagesContainerRef.current;
+            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+            // Chỉ cuộn xuống nếu user đang ở gần cuối trang (trong vòng 100px)
+            // Hoặc nếu tin nhắn mới là từ user hiện tại (tin nhắn mình gửi)
+            const lastMessage = messages[messages.length - 1];
+            const isFromCurrentUser = lastMessage && isCurrentUser(lastMessage.senderId);
+
+            if (isNearBottom || isFromCurrentUser) {
+                // Đợi DOM cập nhật, sau đó cuộn xuống cuối
+                const timer = setTimeout(() => {
+                    if (messagesContainerRef.current) {
+                        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+                    }
+                }, 50);
+
+                return () => clearTimeout(timer);
+            }
+        }
+
+        previousMessagesLengthRef.current = messages.length;
+    }, [messages, loading, loadingMore]);
+
     // Đặt lại cờ tải thêm khi loadingMore thay đổi
     useEffect(() => {
         if (!loadingMore) {
@@ -211,13 +244,13 @@ export default function MessageBox({ chat }) {
                             className={`flex ${isCurrentUser(msg.senderId) ? 'justify-end' : 'justify-start'}`}
                         >
                             <div
-                                className={`max-w-xs px-4 py-2 rounded-full ${
+                                className={`max-w-xs px-4 py-2 rounded-2xl break-words ${
                                     isCurrentUser(msg.senderId)
                                         ? 'bg-ig-primary text-white'
                                         : 'bg-gray-200 dark:bg-gray-800'
                                 }`}
                             >
-                                <p className="text-sm">{msg.content}</p>
+                                <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                                 <p
                                     className={`text-xs mt-1 ${isCurrentUser(msg.senderId) ? 'text-white/70' : 'text-gray-500'}`}
                                 >
@@ -233,7 +266,7 @@ export default function MessageBox({ chat }) {
                 {/* Chỉ báo đang gõ */}
                 {typingUsers.length > 0 && (
                     <div className="flex justify-start">
-                        <div className="max-w-xs px-4 py-2 rounded-full bg-gray-200 dark:bg-gray-800">
+                        <div className="max-w-xs px-4 py-2 rounded-2xl bg-gray-200 dark:bg-gray-800">
                             <div className="flex items-center gap-1">
                                 {/* <p className="text-sm text-gray-500 italic">
                                     {typingUsers.length === 1

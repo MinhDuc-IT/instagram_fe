@@ -47,6 +47,7 @@ export interface MessageState {
     hasMoreMessages: boolean;
     messagesOffset: number;
     typingUsers: TypingUser[]; // Người dùng đang gõ trong cuộc trò chuyện được chọn
+    totalUnreadMessages: number; // Tổng số unread messages (để hiển thị badge khi chưa fetch conversations)
 }
 
 const initialState: MessageState = {
@@ -60,6 +61,7 @@ const initialState: MessageState = {
     hasMoreMessages: false,
     messagesOffset: 0,
     typingUsers: [],
+    totalUnreadMessages: 0,
 };
 
 // Slice
@@ -74,6 +76,11 @@ export const messageSlice = createSlice({
         },
         fetchConversationsSuccess: (state, action: PayloadAction<Conversation[]>) => {
             state.conversations = action.payload;
+            // Cập nhật totalUnreadMessages từ conversations mới fetch
+            state.totalUnreadMessages = action.payload.reduce(
+                (sum, conv) => sum + (conv.unreadCount || 0),
+                0
+            );
             state.loading = false;
             state.error = null;
         },
@@ -197,6 +204,11 @@ export const messageSlice = createSlice({
             const conversation = state.conversations.find((c) => c.id === action.payload.conversationId);
             if (conversation) {
                 conversation.unreadCount = Math.max(0, conversation.unreadCount - action.payload.readCount);
+                // Cập nhật totalUnreadMessages
+                state.totalUnreadMessages = state.conversations.reduce(
+                    (sum, conv) => sum + (conv.unreadCount || 0),
+                    0
+                );
             }
         },
         markAsReadFailure: (state, _action: PayloadAction<string>) => {
@@ -234,6 +246,22 @@ export const messageSlice = createSlice({
         clearAllTypingUsers: (state) => {
             state.typingUsers = [];
         },
+
+        // Tăng unread count cho conversation khi nhận message notification
+        incrementConversationUnreadCount: (state, action: PayloadAction<{ conversationId: string }>) => {
+            const conversation = state.conversations.find((c) => c.id === action.payload.conversationId);
+            if (conversation) {
+                conversation.unreadCount = (conversation.unreadCount || 0) + 1;
+                // Cập nhật totalUnreadMessages
+                state.totalUnreadMessages = state.conversations.reduce(
+                    (sum, conv) => sum + (conv.unreadCount || 0),
+                    0
+                );
+            } else {
+                // Nếu conversation chưa có trong state (chưa fetch conversations), tăng totalUnreadMessages
+                state.totalUnreadMessages = (state.totalUnreadMessages || 0) + 1;
+            }
+        },
     },
 });
 
@@ -257,6 +285,7 @@ export const {
     setTypingUser,
     clearTypingUser,
     clearAllTypingUsers,
+    incrementConversationUnreadCount,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

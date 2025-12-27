@@ -55,8 +55,9 @@ export const PostService = {
 
     async getById(postId: string) {
         try {
+            // axios interceptor đã trả về response.data, nên response đã là data object
             const response = await axios.get(`post/${postId}`);
-            return response.data;
+            return response;
         } catch (error) {
             console.error("Error fetching post detail:", error);
             throw error;

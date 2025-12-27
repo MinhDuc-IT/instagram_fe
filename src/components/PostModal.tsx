@@ -15,13 +15,15 @@ import { usePostComments } from '../hooks/usePostComments';
 interface PostModalProps {
     post: Post;
     onClose: () => void;
+    scrollToCommentId?: number | null;
 }
 
-export default function PostModal({ post, onClose }: PostModalProps) {
+export default function PostModal({ post, onClose, scrollToCommentId }: PostModalProps) {
     const dispatch = useDispatch<AppDispatch>();
     const p =
         useSelector((state: any) => state.users.userPosts.find((postItem: Post) => postItem.id === post.id)) || post;
     console.log('PostModal rendering with post:', p);
+
     const [detail, setDetail] = useState<Post | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -35,6 +37,7 @@ export default function PostModal({ post, onClose }: PostModalProps) {
     const [rootCommentId, setRootCommentId] = useState<number>(0);
     const inputRef = useRef<HTMLInputElement | null>(null);
     const { user: currentUser } = useSelector((state: RootState) => state.auth);
+    const commentsContainerRef = useRef<HTMLDivElement>(null);
 
     usePostComments(post.id.toString(), true);
 
@@ -67,6 +70,27 @@ export default function PostModal({ post, onClose }: PostModalProps) {
             clearTimeout(timer);
         };
     }, [post]);
+
+    // Scroll to comment when scrollToCommentId is set
+    useEffect(() => {
+        if (scrollToCommentId && detail && commentsContainerRef.current) {
+            // Wait for comments to render
+            const timer = setTimeout(() => {
+                const commentElement = commentsContainerRef.current?.querySelector(
+                    `[data-comment-id="${scrollToCommentId}"]`,
+                ) as HTMLElement;
+                if (commentElement) {
+                    commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Highlight the comment briefly
+                    commentElement.classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+                    setTimeout(() => {
+                        commentElement.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                    }, 2000);
+                }
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [scrollToCommentId, detail]);
 
     if (!post) return null;
 
@@ -308,7 +332,7 @@ export default function PostModal({ post, onClose }: PostModalProps) {
                     </div>
 
                     {/* Comments / Caption area */}
-                    <div className="p-4 overflow-y-auto flex-1">
+                    <div className="p-4 overflow-y-auto flex-1" ref={commentsContainerRef}>
                         {/* Caption */}
                         {p.caption && (
                             <div className="mb-4">

@@ -16,6 +16,14 @@ export default function Navbar() {
     (state: RootState) => state.auth
   );
 
+  const { unreadCount } = useSelector(
+    (state: RootState) => state.notification
+  );
+
+  const { totalUnreadMessages } = useSelector(
+    (state: RootState) => state.message
+  );
+
   interface NavItem {
     path: string;
     icon: React.ElementType;
@@ -35,23 +43,32 @@ export default function Navbar() {
   return (
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 z-50">
         <div className="flex justify-around items-center h-14">
-          {navItems.map(({ path, icon: Icon, label }) => (
-            <Link
-              key={path}
-              to={path}
-              className={`p-2 ${
-                isActive(path)
-                  ? "text-black dark:text-white"
-                  : "text-gray-500"
-              }`}
-              aria-label={label}
-            >
-              <Icon
-                className="w-6 h-6"
-                strokeWidth={isActive(path) ? 2.5 : 1.5}
-              />
-            </Link>
-          ))}
+          {navItems.map(({ path, icon: Icon, label }) => {
+            const showNotificationBadge = path === "/notifications" && unreadCount > 0;
+            const showMessageBadge = path === "/messages" && totalUnreadMessages > 0;
+            const showBadge = showNotificationBadge || showMessageBadge;
+            
+            return (
+              <Link
+                key={path}
+                to={path}
+                className={`relative p-2 ${
+                  isActive(path)
+                    ? "text-black dark:text-white"
+                    : "text-gray-500"
+                }`}
+                aria-label={label}
+              >
+                <Icon
+                  className="w-6 h-6"
+                  strokeWidth={isActive(path) ? 2.5 : 1.5}
+                />
+                {showBadge && (
+                  <span className="absolute top-0 right-0 bg-red-500 rounded-full w-2 h-2"></span>
+                )}
+              </Link>
+            );
+          })}
 
           {/* Profile */}
           <Link

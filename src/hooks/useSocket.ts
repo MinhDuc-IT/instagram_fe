@@ -6,6 +6,7 @@ import {
     updateConversation,
     setTypingUser,
     clearTypingUser,
+    markAsReadRequest,
 } from '../redux/features/message/messageSlice';
 import { Message, Conversation } from '../redux/features/message/messageSlice';
 
@@ -41,6 +42,13 @@ export const useSocket = () => {
             // 2. Hoặc từ người dùng hiện tại nhưng không phải cuộc trò chuyện hiện tại (gửi từ thiết bị/tab khác)
             if (!isFromCurrentUser || !isCurrentConversation) {
                 dispatch(addNewMessage(message));
+            }
+
+            // Nếu đang mở cuộc hội thoại này và tin nhắn không phải từ user hiện tại
+            // Tự động đánh dấu là đã đọc
+            if (isCurrentConversation && !isFromCurrentUser && message.conversationId) {
+                console.log('Auto marking messages as read for conversation:', message.conversationId);
+                dispatch(markAsReadRequest(message.conversationId));
             }
         };
 
