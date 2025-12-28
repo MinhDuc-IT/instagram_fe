@@ -34,6 +34,7 @@ export interface UsersState {
     userPosts: Post[];
     likedPosts: Post[];
     savedPosts: Post[];
+    userReels: Post[];
     loading: boolean;
     error: string | null;
 }
@@ -45,6 +46,7 @@ const initialState: UsersState = {
     userPosts: [],
     likedPosts: [],
     savedPosts: [],
+    userReels: [],
     loading: false,
     error: null,
 };
@@ -140,6 +142,19 @@ export const userSlice = createSlice({
             state.error = action.payload;
         },
 
+        fetchReelsRequest: (state, _action: PayloadAction<number>) => {
+            state.loading = true;
+            state.error = null;
+        },
+        fetchReelsSuccess: (state, action: PayloadAction<Post[]>) => {
+            state.userReels = action.payload;
+            state.loading = false;
+        },
+        fetchReelsFailure: (state, action: PayloadAction<string>) => {
+            state.loading = false;
+            state.error = action.payload;
+        },
+
         // Update a single post in userPosts (used for optimistic updates)
         updatePost: (state, action: PayloadAction<Post>) => {
             const updated = action.payload;
@@ -172,10 +187,10 @@ export const userSlice = createSlice({
             state.users = state.users.map((user) =>
                 user.id === userId
                     ? {
-                          ...user,
-                          isFollowing: !user.isFollowing,
-                          followers: user.isFollowing ? (user.followers ?? 0) - 1 : (user.followers ?? 0) + 1,
-                      }
+                        ...user,
+                        isFollowing: !user.isFollowing,
+                        followers: user.isFollowing ? (user.followers ?? 0) - 1 : (user.followers ?? 0) + 1,
+                    }
                     : user,
             );
         },
@@ -211,6 +226,9 @@ export const {
     fetchSavedPostsRequest,
     fetchSavedPostsSuccess,
     fetchSavedPostsFailure,
+    fetchReelsRequest,
+    fetchReelsSuccess,
+    fetchReelsFailure,
     updatePost,
     toggleLikePost,
     toggleSavePost,

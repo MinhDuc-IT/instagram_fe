@@ -22,7 +22,7 @@ function* fetchStoriesSaga(): SagaIterator {
 
         yield put(
             fetchStoriesSuccess({
-                stories: res.stories,
+                stories: res.items,
                 pagination: res.pagination,
             })
         )

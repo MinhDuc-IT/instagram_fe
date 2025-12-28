@@ -53,7 +53,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
     const newIsSaved = !originalIsSaved
 
     setIsSaved(newIsSaved)
-    
+
     dispatch(toggleSavePost({ postId: post.id, isSaved: newIsSaved }))
 
     try {
@@ -153,9 +153,8 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
                 {post.media.map((_, idx) => (
                   <div
                     key={idx}
-                    className={`w-1.5 h-1.5 rounded-full transition ${
-                      idx === currentIndex ? "bg-blue-500" : "bg-white/60"
-                    }`}
+                    className={`w-1.5 h-1.5 rounded-full transition ${idx === currentIndex ? "bg-blue-500" : "bg-white/60"
+                      }`}
                   />
                 ))}
               </div>
@@ -175,22 +174,30 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
                 color={post.isLiked ? "#ed4956" : "currentColor"}
                 strokeWidth={post.isLiked ? 0 : 2}
               />
-              {post.likeCount != null && post.likeCount > 0 && (
+              {post.likeCount != null && post.likeCount > 0 && !post.isLikesHidden && (
                 <span className="text-sm font-semibold">{DataUtil.formatlikeCount(post.likeCount)}</span>
               )}
             </button>
-            <button className="hover:text-gray-500 transition" onClick={(e) => e.stopPropagation()}>
+            <button className="hover:text-gray-500 transition flex items-center gap-2" onClick={(e) => {
+              e.stopPropagation()
+              handleCardClick()
+            }}>
               <MessageCircle size={24} strokeWidth={2} />
+              {post.commentsCount != null && !post.isCommentsDisabled && (
+                <span className="text-sm font-semibold">{DataUtil.formatlikeCount(post.commentsCount)}</span>
+              )}
             </button>
             <button className="hover:text-gray-500 transition" onClick={(e) => e.stopPropagation()}>
               <Send size={24} strokeWidth={2} />
             </button>
           </div>
           <button onClick={handleSave} className="hover:text-gray-500 transition">
-            <Bookmark 
-              size={24} 
-              fill={isSaved ? "currentColor" : "none"}
-              strokeWidth={2} 
+            <Bookmark
+              size={24}
+              fill={isSaved ? "#2563eb" : "none"}
+              stroke={isSaved ? "#2563eb" : "currentColor"}
+              className={isSaved ? "text-blue-500" : ""}
+              strokeWidth={2}
             />
           </button>
         </div>
@@ -202,13 +209,13 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
               {post.username}
             </span>
             <span className="text-gray-900">
-              {needsTruncate && !showFullCaption 
-                ? post.caption.slice(0, captionLimit) + '...' 
+              {needsTruncate && !showFullCaption
+                ? post.caption.slice(0, captionLimit) + '...'
                 : post.caption
               }
             </span>
             {needsTruncate && (
-              <button 
+              <button
                 onClick={toggleCaption}
                 className="text-blue-500 ml-1 hover:text-blue-700"
               >

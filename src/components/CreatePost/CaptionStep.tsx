@@ -12,6 +12,10 @@ interface CaptionStepProps {
     caption: string;
     location: string;
     uploading: boolean;
+    isLikesHidden: boolean;
+    isCommentsDisabled: boolean;
+    setIsLikesHidden: (val: boolean) => void;
+    setIsCommentsDisabled: (val: boolean) => void;
     onNavigate: (index: number) => void;
     onCaptionChange: (caption: string) => void;
     onLocationChange: (location: string) => void;
@@ -24,6 +28,10 @@ const CaptionStep: React.FC<CaptionStepProps> = ({
     caption,
     location,
     uploading,
+    isLikesHidden,
+    isCommentsDisabled,
+    setIsLikesHidden,
+    setIsCommentsDisabled,
     onNavigate,
     onCaptionChange,
     onLocationChange,
@@ -96,13 +104,23 @@ const CaptionStep: React.FC<CaptionStepProps> = ({
                                 <ChevronDown size={16} />
                             </summary>
                             <div className="text-xs text-gray-500 mt-2 space-y-2">
-                                <label className="flex items-center justify-between">
+                                <label className="flex items-center justify-between cursor-pointer">
                                     <span>Hide like and view counts</span>
-                                    <input type="checkbox" className="rounded" />
+                                    <input
+                                        type="checkbox"
+                                        className="rounded"
+                                        checked={isLikesHidden}
+                                        onChange={(e) => setIsLikesHidden(e.target.checked)}
+                                    />
                                 </label>
-                                <label className="flex items-center justify-between">
+                                <label className="flex items-center justify-between cursor-pointer">
                                     <span>Turn off commenting</span>
-                                    <input type="checkbox" className="rounded" />
+                                    <input
+                                        type="checkbox"
+                                        className="rounded"
+                                        checked={isCommentsDisabled}
+                                        onChange={(e) => setIsCommentsDisabled(e.target.checked)}
+                                    />
                                 </label>
                             </div>
                         </details>

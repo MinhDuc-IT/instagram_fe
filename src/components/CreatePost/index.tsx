@@ -10,6 +10,9 @@ import { usePostUpload } from '../../hooks/usePostUpload';
 
 type Step = 'select' | 'edit' | 'caption';
 
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/store';
+
 interface CreatePostModalProps {
     open: boolean;
     onClose: () => void;
@@ -21,7 +24,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
     const [caption, setCaption] = useState('');
     const [location, setLocation] = useState('');
     const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+    const [isLikesHidden, setIsLikesHidden] = useState(false);
+    const [isCommentsDisabled, setIsCommentsDisabled] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { user: currentUser } = useSelector((state: RootState) => state.auth);
 
     const { uploading, uploadProgress, uploadMultiple } = useMediaUpload();
     const { uploading: postUploading, uploadProgress: postUploadProgress, uploadPost } = usePostUpload();
@@ -91,12 +97,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
         // setMediaFiles(finalFiles);
 
         try {
+            if (!currentUser) {
+                alert("Please log in to create a post.");
+                return;
+            }
+
             const result = await uploadPost(
                 caption,
                 location,
                 'public',
-                false,
-                false,
+                isLikesHidden,
+                isCommentsDisabled,
                 mediaFiles
             );
 
@@ -140,7 +151,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
             onClick={handleBackdropClick}
         >
-            <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+            {!currentUser && (
+                <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-black/80 text-white">
+                    <h3 className="text-xl font-bold mb-4">Login Required</h3>
+                    <p className="mb-6">You must be logged in to create a post.</p>
+                    <button onClick={onClose} className="px-4 py-2 bg-blue-500 rounded hover:bg-blue-600 transition">
+                        Close
+                    </button>
+                </div>
+            )}
+            <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-gray-200 relative">
                 <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
                     <button
                         onClick={step !== 'select' ? handleBack : handleClose}
@@ -203,6 +223,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
                             caption={caption}
                             location={location}
                             uploading={uploading}
+
+                            isLikesHidden={isLikesHidden}
+                            isCommentsDisabled={isCommentsDisabled}
+                            setIsLikesHidden={setIsLikesHidden}
+                            setIsCommentsDisabled={setIsCommentsDisabled}
                             onNavigate={setCurrentIndex}
                             onCaptionChange={setCaption}
                             onLocationChange={setLocation}

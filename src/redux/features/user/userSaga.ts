@@ -16,6 +16,9 @@ import {
     fetchSavedPostsRequest,
     fetchSavedPostsSuccess,
     fetchSavedPostsFailure,
+    fetchReelsRequest,
+    fetchReelsSuccess,
+    fetchReelsFailure,
     updateProfileRequest,
     updateProfileSuccess,
     updateProfileFailure,
@@ -27,12 +30,13 @@ import {
     getUserPostsApi,
     getUserLikedPostsApi,
     getUserSavedPostsApi,
+    getUserReelsApi,
     updateProfile,
 } from "../../../service/userService";
 
 import { User } from "./userSlice";
 import { Post } from "../../../types/post.type";
-import {UserUpdateRequest } from "../../../types/user.type";
+import { UserUpdateRequest } from "../../../types/user.type";
 import { setUserAvatar } from "../auth/authSlice";
 // Users
 function* handleFetchUsers() {
@@ -48,14 +52,14 @@ function* handleFetchUsers() {
 function* handleFetchProfileUser(action: ReturnType<typeof fetchProfileUserRequest>) {
     try {
         const userId = action.payload;
-        
+
         // Check if already cached
         const state: RootState = yield select();
         if (state.users.profileUserId === userId && state.users.profileUser) {
             console.log("✅ Profile already cached, skipping fetch");
             return;
         }
-        
+
         const user: User = yield call(getUserByIdApi, userId);
         const posts: Post[] = yield call(getUserPostsApi, userId);
         console.log("Fetched profile user:", user);
@@ -87,15 +91,15 @@ function* handleUpdateProfile(action: ReturnType<typeof updateProfileRequest>) {
 
 // Posts
 function* handleFetchUserPosts(action: ReturnType<typeof fetchUserPostsRequest>) {
-  try {
-    console.log("🔥 handleFetchUserPosts running, payload:", action.payload);
-    const res: Post[] = yield call(getUserPostsApi, action.payload);
-    console.log("Fetched user posts:", res);
-    yield put(fetchUserPostsSuccess(res));
-  } catch (error: any) {
-    console.error("Fetch user posts failed:", error);
-    yield put(fetchUserPostsFailure(error.response?.data?.message || "Fetch user posts failed"));
-  }
+    try {
+        console.log("🔥 handleFetchUserPosts running, payload:", action.payload);
+        const res: Post[] = yield call(getUserPostsApi, action.payload);
+        console.log("Fetched user posts:", res);
+        yield put(fetchUserPostsSuccess(res));
+    } catch (error: any) {
+        console.error("Fetch user posts failed:", error);
+        yield put(fetchUserPostsFailure(error.response?.data?.message || "Fetch user posts failed"));
+    }
 }
 
 function* handleFetchLikedPosts(action: ReturnType<typeof fetchLikedPostsRequest>) {
@@ -116,6 +120,16 @@ function* handleFetchSavedPosts(action: ReturnType<typeof fetchSavedPostsRequest
     }
 }
 
+
+function* handleFetchReels(action: ReturnType<typeof fetchReelsRequest>) {
+    try {
+        const res: Post[] = yield call(getUserReelsApi, action.payload);
+        yield put(fetchReelsSuccess(res));
+    } catch (error: any) {
+        yield put(fetchReelsFailure(error.response?.data?.message || "Fetch reels failed"));
+    }
+}
+
 // Root saga
 export default function* userSaga() {
     yield takeEvery(fetchUsersRequest.type, handleFetchUsers);
@@ -126,5 +140,6 @@ export default function* userSaga() {
     });
     yield takeEvery(fetchLikedPostsRequest.type, handleFetchLikedPosts);
     yield takeEvery(fetchSavedPostsRequest.type, handleFetchSavedPosts);
+    yield takeEvery(fetchReelsRequest.type, handleFetchReels);
     yield takeEvery(updateProfileRequest.type, handleUpdateProfile);
 }
