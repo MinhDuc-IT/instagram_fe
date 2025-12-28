@@ -8,6 +8,8 @@ export interface StoryItem {
   expiresAt: string
   isViewed: boolean
   isLiked: boolean
+  postId?: string
+  post?: any
 }
 
 export interface UserStoryGroup {

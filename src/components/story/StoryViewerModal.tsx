@@ -101,7 +101,44 @@ export default function StoryViewerModal({ group, onClose }: Props) {
 
                 {/* Content */}
                 <div className="w-full h-full flex items-center justify-center bg-black">
-                    {currentStory.type === 'video' ? (
+                    {currentStory.postId && currentStory.post ? (
+                        <div className="w-[85%] bg-white rounded-xl overflow-hidden shadow-2xl p-3">
+                            {/* Shared Post Header */}
+                            <div className="flex items-center gap-2 mb-2">
+                                <img
+                                    src={currentStory.post.User?.avatar || "/placeholder.svg"}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                />
+                                <span className="font-semibold text-black text-sm">
+                                    {currentStory.post.User?.userName}
+                                </span>
+                            </div>
+
+                            {/* Shared Post Media */}
+                            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-2">
+                                {currentStory.post.UploadedAsset?.[0]?.type === 'video' ? (
+                                    <video
+                                        src={currentStory.post.UploadedAsset[0].url}
+                                        className="w-full h-full object-cover"
+                                        autoPlay
+                                        muted
+                                        loop
+                                    />
+                                ) : (
+                                    <img
+                                        src={currentStory.post.UploadedAsset?.[0]?.url || "/placeholder.svg"}
+                                        className="w-full h-full object-cover"
+                                    />
+                                )}
+                            </div>
+
+                            {/* Shared Post Caption */}
+                            <div className="text-black text-sm line-clamp-2">
+                                <span className="font-semibold mr-1">{currentStory.post.User?.userName}</span>
+                                {currentStory.post.caption}
+                            </div>
+                        </div>
+                    ) : currentStory.type === 'video' ? (
                         <video
                             src={currentStory.mediaUrl}
                             autoPlay

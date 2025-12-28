@@ -1,12 +1,14 @@
 import { useState } from "react"
 import { Image, Video, X, ChevronLeft } from "lucide-react"
+import { Post } from "../../types/post.type";
 
 interface Props {
     onClose: () => void
-    onSubmit: (file: File) => void
+    onSubmit: (file?: File, postId?: string) => void
+    sharedPost?: Post | null
 }
 
-export default function AddStoryModal({ onClose, onSubmit }: Props) {
+export default function AddStoryModal({ onClose, onSubmit, sharedPost }: Props) {
     const [file, setFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
@@ -19,7 +21,9 @@ export default function AddStoryModal({ onClose, onSubmit }: Props) {
     }
 
     const handleSubmit = () => {
-        if (file) {
+        if (sharedPost) {
+            onSubmit(undefined, sharedPost.id)
+        } else if (file) {
             onSubmit(file)
         }
     }
@@ -35,9 +39,9 @@ export default function AddStoryModal({ onClose, onSubmit }: Props) {
                 <X size={32} />
             </button>
 
-            <div className={`relative w-full max-w-md h-[80vh] bg-gray-900 rounded-xl overflow-hidden shadow-2xl flex flex-col items-center justify-center ${!file ? 'border-2 border-dashed border-gray-700' : ''}`}>
+            <div className={`relative w-full max-w-md h-[80vh] bg-gray-900 rounded-xl overflow-hidden shadow-2xl flex flex-col items-center justify-center ${!file && !sharedPost ? 'border-2 border-dashed border-gray-700' : ''}`}>
 
-                {!file ? (
+                {!file && !sharedPost ? (
                     <div className="text-center space-y-6 p-8">
                         <div className="w-20 h-20 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 p-[2px]">
                             <div className="w-full h-full bg-gray-900 rounded-full flex items-center justify-center">
@@ -62,11 +66,49 @@ export default function AddStoryModal({ onClose, onSubmit }: Props) {
                     </div>
                 ) : (
                     <>
-                        <div className="relative w-full h-full bg-black flex items-center justify-center">
-                            {file.type.startsWith("image") ? (
-                                <img src={previewUrl!} className="w-full h-full object-contain" alt="Preview" />
+                        <div className="relative w-full h-full bg-black flex items-center justify-center p-4">
+                            {sharedPost ? (
+                                // Shared Post Preview Card
+                                <div className="w-full bg-white rounded-xl overflow-hidden shadow-2xl p-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <img
+                                            src={sharedPost.userAvatar || "/placeholder.svg"}
+                                            className="w-10 h-10 rounded-full object-cover"
+                                        />
+                                        <span className="font-semibold text-black text-sm">
+                                            {sharedPost.username}
+                                        </span>
+                                    </div>
+
+                                    <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
+                                        {sharedPost.media?.[0]?.type === 'video' ? (
+                                            <video
+                                                src={sharedPost.media[0].url}
+                                                className="w-full h-full object-cover"
+                                                autoPlay
+                                                muted
+                                                loop
+                                            />
+                                        ) : (
+                                            <img
+                                                src={sharedPost.media?.[0]?.url || "/placeholder.svg"}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        )}
+                                    </div>
+
+                                    <div className="text-black text-sm line-clamp-2">
+                                        <span className="font-semibold mr-1">{sharedPost.username}</span>
+                                        {sharedPost.caption}
+                                    </div>
+                                </div>
                             ) : (
-                                <video src={previewUrl!} className="w-full h-full object-contain" autoPlay loop muted />
+                                // File Preview
+                                file?.type.startsWith("image") ? (
+                                    <img src={previewUrl!} className="w-full h-full object-contain" alt="Preview" />
+                                ) : (
+                                    <video src={previewUrl!} className="w-full h-full object-contain" autoPlay loop muted />
+                                )
                             )}
 
                             {/* Overlay Gradient */}

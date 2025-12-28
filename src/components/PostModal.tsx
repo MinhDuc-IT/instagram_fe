@@ -18,9 +18,10 @@ interface PostModalProps {
     post: Post;
     onClose: () => void;
     scrollToCommentId?: number | null;
+    onShareToStory?: (post: Post) => void;
 }
 
-export default function PostModal({ post, onClose, scrollToCommentId }: PostModalProps) {
+export default function PostModal({ post, onClose, scrollToCommentId, onShareToStory }: PostModalProps) {
     const dispatch = useDispatch<AppDispatch>();
     const reduxPost =
         useSelector((state: any) => state.users.userPosts.find((postItem: Post) => postItem.id === post.id)) || post;
@@ -35,6 +36,7 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
     const mountedRef = useRef(false);
     const [edit, setEdit] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [showShareMenu, setShowShareMenu] = useState(false);
     const [replyTo, setReplyTo] = useState<string | null>(null);
     const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
     const [rootCommentId, setRootCommentId] = useState<number>(0);
@@ -482,9 +484,38 @@ export default function PostModal({ post, onClose, scrollToCommentId }: PostModa
                                 <button aria-label="Comment" className="hover:opacity-60 transition" onClick={() => inputRef.current?.focus()}>
                                     <MessageCircle size={24} className="text-black dark:text-white -rotate-90" />
                                 </button>
-                                <button aria-label="Share" className="hover:opacity-60 transition">
-                                    <svg aria-label="Share Post" className="text-black dark:text-white" color="currentColor" fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><line fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" x1="22" x2="9.218" y1="3" y2="10.083"></line><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
-                                </button>
+                                <div className="relative">
+                                    <button
+                                        aria-label="Share"
+                                        className="hover:opacity-60 transition"
+                                        onClick={() => setShowShareMenu(!showShareMenu)}
+                                    >
+                                        <svg aria-label="Share Post" className="text-black dark:text-white" color="currentColor" fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><line fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" x1="22" x2="9.218" y1="3" y2="10.083"></line><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
+                                    </button>
+                                    {showShareMenu && (
+                                        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-50 w-48 overflow-hidden">
+                                            <button
+                                                className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium transition-colors"
+                                                onClick={() => {
+                                                    onShareToStory?.(p);
+                                                    setShowShareMenu(false);
+                                                }}
+                                            >
+                                                Add to story
+                                            </button>
+                                            <button
+                                                className="w-full text-left px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium transition-colors"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(window.location.href);
+                                                    setShowShareMenu(false);
+                                                    alert('Link copied!');
+                                                }}
+                                            >
+                                                Copy link
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <button
                                 aria-label="Save"

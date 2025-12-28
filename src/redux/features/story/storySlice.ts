@@ -113,6 +113,16 @@ const storySlice = createSlice({
         },
         createStoryFailure(state) {
             state.loadingCreate = false
+        },
+
+        shareStoryRequest(state, action: PayloadAction<string>) {
+            state.loadingCreate = true
+        },
+        shareStorySuccess(state) {
+            state.loadingCreate = false
+        },
+        shareStoryFailure(state) {
+            state.loadingCreate = false
         }
 
     },
@@ -128,7 +138,10 @@ export const {
     markStoryViewed,
     createStoryRequest,
     createStorySuccess,
-    createStoryFailure
+    createStoryFailure,
+    shareStoryRequest,
+    shareStorySuccess,
+    shareStoryFailure
 } = storySlice.actions
 
 export default storySlice.reducer
