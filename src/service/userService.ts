@@ -19,8 +19,7 @@ export const getUsersApi = async (): Promise<User[]> => {
 export const getUserPostsApi = async (userId: number): Promise<Post[]> => {
     const res = await axios.get<Post[]>(`/post/user/${userId}`);
     // interceptor trả về data trực tiếp
-    console.log("API response for user posts:", res);
-    return res; // res đã là Post[]
+    return res as any; // res đã là Post[]
 };
 
 // Liked posts
@@ -31,8 +30,15 @@ export const getUserLikedPostsApi = async (userId: number): Promise<Post[]> => {
 
 // Saved posts
 export const getUserSavedPostsApi = async (userId: number): Promise<Post[]> => {
-    const res = await axios.get<ApiResponse<Post[]>>(`/users/${userId}/saved-posts`);
-    return res.data.data;
+    // API returns Post[], not ApiResponse<Post[]> according to PostController
+    const res = await axios.get<Post[]>(`/post/user/${userId}/saved`);
+    return res as any;
+};
+
+// Reels
+export const getUserReelsApi = async (userId: number): Promise<Post[]> => {
+    const res = await axios.get<Post[]>(`/post/user/${userId}/reels`);
+    return res as any;
 };
 
 // Get user by ID

@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit"
-import { Story } from "@/src/types/story.type";
+import { UserStoryGroup } from "@/src/types/story.type";
 
 interface StoryState {
-    stories: Story[]
+    stories: UserStoryGroup[]
     loading: boolean
     loadingMore: boolean
     currentPage: number
@@ -36,7 +36,7 @@ const storySlice = createSlice({
         fetchStoriesSuccess(
             state,
             action: PayloadAction<{
-                stories: Story[]
+                stories: UserStoryGroup[]
                 pagination: {
                     currentPage: number
                     totalPages: number
@@ -64,7 +64,7 @@ const storySlice = createSlice({
         fetchMoreStoriesSuccess(
             state,
             action: PayloadAction<{
-                stories: Story[]
+                stories: UserStoryGroup[]
                 pagination: {
                     currentPage: number
                     totalPages: number
@@ -72,9 +72,9 @@ const storySlice = createSlice({
                 }
             }>
         ) {
-            const existingIds = new Set(state.stories.map(s => s.id))
+            const existingUserIds = new Set(state.stories.map(s => s.user.id))
             const newStories = action.payload.stories.filter(
-                s => !existingIds.has(s.id)
+                s => !existingUserIds.has(s.user.id)
             )
 
             state.stories.push(...newStories)
@@ -89,18 +89,39 @@ const storySlice = createSlice({
         },
 
         markStoryViewed(state, action: PayloadAction<string>) {
-            const story = state.stories.find(s => s.id === action.payload)
-            if (story) story.isViewed = true
+            // Find the group containing the story
+            for (const group of state.stories) {
+                const story = group.stories.find(s => s.id === action.payload)
+                if (story) {
+                    story.isViewed = true
+                    // Re-evaluate hasUnseen
+                    group.hasUnseen = group.stories.some(s => !s.isViewed)
+                    break
+                }
+            }
         },
 
-        createStoryRequest(state) {
+        createStoryRequest(state, action: PayloadAction<FormData>) {
             state.loadingCreate = true
         },
         createStorySuccess(state, action) {
             state.loadingCreate = false
-            state.stories.unshift(action.payload)
+            // Note: Optimistic update is hard because we need the full user object.
+            // Ideally backend returns the full UserStoryGroup or we refetch.
+            // For now, let's assume we refetch or the user manually refreshes, 
+            // or we add a temporary item if we have the user info.
         },
         createStoryFailure(state) {
+            state.loadingCreate = false
+        },
+
+        shareStoryRequest(state, action: PayloadAction<string>) {
+            state.loadingCreate = true
+        },
+        shareStorySuccess(state) {
+            state.loadingCreate = false
+        },
+        shareStoryFailure(state) {
             state.loadingCreate = false
         }
 
@@ -117,7 +138,10 @@ export const {
     markStoryViewed,
     createStoryRequest,
     createStorySuccess,
-    createStoryFailure
+    createStoryFailure,
+    shareStoryRequest,
+    shareStorySuccess,
+    shareStoryFailure
 } = storySlice.actions
 
 export default storySlice.reducer

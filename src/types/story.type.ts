@@ -1,14 +1,26 @@
 import { User } from "./user.type"
 
-export interface Story {
+export interface StoryItem {
   id: string
-  user: User
-  isViewed?: boolean
+  mediaUrl: string
+  type: "image" | "video"
   createdAt: string
+  expiresAt: string
+  isViewed: boolean
+  isLiked: boolean
+  postId?: string
+  post?: any
+}
+
+export interface UserStoryGroup {
+  user: User
+  stories: StoryItem[]
+  hasUnseen: boolean
+  latestStoryAt: number
 }
 
 export interface StoryPagingResponse {
-  stories: Story[]
+  stories: UserStoryGroup[]
   pagination: {
     currentPage: number
     totalPages: number

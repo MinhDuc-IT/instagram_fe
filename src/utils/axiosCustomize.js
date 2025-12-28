@@ -83,24 +83,28 @@ instance.interceptors.response.use(
                         { withCredentials: true }
                     );
 
-                    const newToken = res?.data?.accessToken;
+                    const newAccessToken = res?.data?.data?.accessToken || res?.data?.accessToken;
+                    const newRefreshToken = res?.data?.data?.refreshToken || res?.data?.refreshToken;
 
-                    if (!newToken) {
+                    if (!newAccessToken) {
                         console.log("❌ Refresh API không trả access token");
                         return Promise.reject(error);
                     }
 
-                    // 🔥 Cập nhật redux
+                    // 🔥 Cập nhật redux và localStorage
                     store.dispatch({
-                        type: "auth/updateAccessToken",
-                        payload: newToken,
+                        type: "auth/refreshTokenSuccess",
+                        payload: {
+                            accessToken: newAccessToken,
+                            refreshToken: newRefreshToken || refreshToken // fallback if rotation missing
+                        },
                     });
 
                     // Gắn lại Authorization
-                    originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+                    originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
 
                     // Đánh thức các request đang đợi
-                    onRefreshed(newToken);
+                    onRefreshed(newAccessToken);
 
                     isRefreshing = false;
 
@@ -110,8 +114,8 @@ instance.interceptors.response.use(
                     console.log('Refresh token failed:', err);
 
                     // 🔹 Dispatch logout redux
-                    store.dispatch({type: "auth/logoutRequest"});
-                    store.dispatch({type: "auth/logoutSuccess"});
+                    store.dispatch({ type: "auth/logoutRequest" });
+                    store.dispatch({ type: "auth/logoutSuccess" });
 
                     // 🔹 Hiển thị thông báo
                     toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");

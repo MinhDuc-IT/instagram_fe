@@ -8,6 +8,9 @@ import {
     fetchMoreStoriesSuccess,
     fetchMoreStoriesFailure,
     createStorySuccess,
+    createStoryRequest,
+    shareStoryRequest,
+    shareStorySuccess,
 } from "./storySlice"
 import { RootState } from "../../store"
 import { SagaIterator } from "redux-saga"
@@ -22,7 +25,7 @@ function* fetchStoriesSaga(): SagaIterator {
 
         yield put(
             fetchStoriesSuccess({
-                stories: res.stories,
+                stories: res.items,
                 pagination: res.pagination,
             })
         )
@@ -43,7 +46,7 @@ function* fetchMoreStoriesSaga(): SagaIterator {
 
         yield put(
             fetchMoreStoriesSuccess({
-                stories: res.stories,
+                stories: res.items,
                 pagination: res.pagination,
             })
         )
@@ -54,11 +57,22 @@ function* fetchMoreStoriesSaga(): SagaIterator {
 
 function* createStorySaga(action: PayloadAction<FormData>): SagaIterator {
     const res = yield call(storyService.createStory, action.payload)
-    yield put(createStorySuccess(res.data))
+    yield put(createStorySuccess(res))
+}
+
+function* shareStorySaga(action: PayloadAction<string>): SagaIterator {
+    try {
+        yield call(storyService.sharePost, action.payload)
+        yield put(shareStorySuccess())
+    } catch (error) {
+        console.error(error)
+    }
 }
 
 
 export function* storySaga() {
     yield takeLatest(fetchStories.type, fetchStoriesSaga)
     yield takeLatest(fetchMoreStories.type, fetchMoreStoriesSaga)
+    yield takeLatest(createStoryRequest.type, createStorySaga)
+    yield takeLatest(shareStoryRequest.type, shareStorySaga)
 }

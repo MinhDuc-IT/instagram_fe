@@ -1,24 +1,28 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import { useDispatch, useSelector } from "react-redux";
 import { loginRequest } from "../redux/features/auth/authSlice";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const { user, loading, error } = useSelector((state) => state.auth);
 
+  const from = location.state?.from || searchParams.get("redirect") || "/home";
+
   useEffect(() => {
     if (user) {
       toast.success("Đăng nhập thành công!");
-      navigate("/home");
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, from]);
 
   useEffect(() => {
     if (error) {
@@ -27,14 +31,14 @@ export default function Login() {
   }, [error]);
 
   useEffect(() => {
-      if (loading) {
-          document.body.style.cursor = 'wait';
-      } else {
-          document.body.style.cursor = 'default';
-      }
-      return () => {
-          document.body.style.cursor = 'default';
-      };
+    if (loading) {
+      document.body.style.cursor = 'wait';
+    } else {
+      document.body.style.cursor = 'default';
+    }
+    return () => {
+      document.body.style.cursor = 'default';
+    };
   }, [loading]);
 
   const handleSubmit = (e) => {
