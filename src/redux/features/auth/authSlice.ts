@@ -130,6 +130,13 @@ export const authSlice = createSlice({
             if (state.user) {
                 state.user.avatar = action.payload;
             }
+        },
+        refreshTokenSuccess: (state, action: PayloadAction<{ accessToken: string, refreshToken: string }>) => {
+            state.accessToken = action.payload.accessToken;
+            state.refreshToken = action.payload.refreshToken;
+
+            localStorage.setItem("accessToken", action.payload.accessToken);
+            localStorage.setItem("refreshToken", action.payload.refreshToken);
         }
     },
 });
@@ -145,6 +152,7 @@ export const {
     // updateProfileSuccess,
     // updateProfileFailure,
     setUserAvatar,
+    refreshTokenSuccess,
 } = authSlice.actions;
 
 export default authSlice.reducer;
