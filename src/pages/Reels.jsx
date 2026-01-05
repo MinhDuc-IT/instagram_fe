@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Loader } from 'lucide-react';
-import { reels } from '../data/posts';
+
 import ReelCard from '../components/Reels/ReelCard';
 import { ReelService } from '../service/reelService';
 import { REELS_PAGE_SIZE } from '../constants/filters';

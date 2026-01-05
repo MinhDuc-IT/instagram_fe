@@ -31,6 +31,7 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
     const [posting, setPosting] = useState(false);
     const [rootCommentId, setRootCommentId] = useState<number>(0);
     const commentsListRef = useRef<HTMLDivElement>(null);
+    const isCommentsDisabled = !!reel?.isCommentsDisabled;
 
     usePostComments(reel?.id, showComments);
 
@@ -93,6 +94,7 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
     };
 
     const handleComment = async () => {
+        if (isCommentsDisabled) return; // prevent posting when comments disabled
         let text = commentText.trim();
         if (!text || posting) return;
 
@@ -173,41 +175,57 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
                         </div>
 
                         {/* Comments List */}
-                        <div
-                            className="flex-1 overflow-y-auto px-4 py-2"
-                            ref={commentsListRef}
-                            onScroll={handleCommentsScroll}
-                        >
-                            {loading && comments.length === 0 ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Loader className="w-6 h-6 animate-spin text-gray-400" />
+                        {reel.isCommentsDisabled ? (
+                            <div className="flex-1 px-4 py-2 flex items-center justify-center">
+                                <div className="w-full rounded-xl border border-dashed border-gray-300 bg-gray-50 dark:bg-gray-900/40 p-6 text-center">
+                                    <div className="mx-auto mb-3 flex items-center justify-center w-12 h-12 rounded-full bg-gray-200/70 dark:bg-gray-800">
+                                        <MessageCircle className="w-6 h-6 text-gray-500" />
+                                    </div>
+                                    <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                        Comments are disabled
+                                    </h4>
+                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        This post has comments turned off. You can still type below.
+                                    </p>
                                 </div>
-                            ) : comments?.length > 0 ? (
-                                <>
-                                    {comments.map((c: any, idx: number) => (
-                                        <CommentItem
-                                            key={c?.id || idx}
-                                            c={c}
-                                            idx={idx}
-                                            reel={reel}
-                                            handleReplyComment={handleReplyComment}
-                                            handleLikeComment={handleLikeComment}
-                                        />
-                                    ))}
-                                    {loading && (
-                                        <div className="text-center py-2">
-                                            <Loader className="w-4 h-4 animate-spin" />
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-12">
-                                    <MessageCircle className="w-16 h-16 text-gray-300 mb-3" />
-                                    <p className="text-gray-500 text-sm">No comments yet</p>
-                                    <p className="text-gray-400 text-xs mt-1">Start the conversation</p>
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <div
+                                className="flex-1 overflow-y-auto px-4 py-2"
+                                ref={commentsListRef}
+                                onScroll={handleCommentsScroll}
+                            >
+                                {loading && comments.length === 0 ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader className="w-6 h-6 animate-spin text-gray-400" />
+                                    </div>
+                                ) : comments?.length > 0 ? (
+                                    <>
+                                        {comments.map((c: any, idx: number) => (
+                                            <CommentItem
+                                                key={c?.id || idx}
+                                                c={c}
+                                                idx={idx}
+                                                reel={reel}
+                                                handleReplyComment={handleReplyComment}
+                                                handleLikeComment={handleLikeComment}
+                                            />
+                                        ))}
+                                        {loading && (
+                                            <div className="text-center py-2">
+                                                <Loader className="w-4 h-4 animate-spin" />
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <MessageCircle className="w-16 h-16 text-gray-300 mb-3" />
+                                        <p className="text-gray-500 text-sm">No comments yet</p>
+                                        <p className="text-gray-400 text-xs mt-1">Start the conversation</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Replying bar */}
                         {replyTo && (
@@ -245,8 +263,19 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
                                 </div>
                                 {commentText && (
                                     <button
-                                        onClick={() => handleComment()}
-                                        className="text-blue-500 font-semibold text-sm"
+                                        onClick={() => {
+                                            if (!isCommentsDisabled) handleComment();
+                                        }}
+                                        className={`font-semibold text-sm ${
+                                            isCommentsDisabled
+                                                ? 'text-gray-400 cursor-not-allowed opacity-50'
+                                                : 'text-blue-500'
+                                        }`}
+                                        disabled={isCommentsDisabled}
+                                        aria-disabled={isCommentsDisabled}
+                                        title={
+                                            isCommentsDisabled ? 'Comments are disabled for this post' : 'Post comment'
+                                        }
                                     >
                                         Post
                                     </button>
@@ -258,7 +287,9 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
             >
                 <button onClick={() => handleClickComment()} className="flex flex-col items-center">
                     <MessageCircle className="w-7 h-7 text-black" />
-                    <span className="text-black text-xs mt-1">{reel?.commentsCount?.toLocaleString?.() || 0}</span>
+                    <span className="text-black text-xs mt-1">
+                        {reel.isCommentsDisabled ? '' : reel?.commentsCount?.toLocaleString?.() || 0}
+                    </span>
                 </button>
             </Tippy>
         </>
