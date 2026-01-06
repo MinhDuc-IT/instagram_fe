@@ -64,12 +64,38 @@ export const PostService = {
         }
     },
 
-    async getPostsByUserId(userId: number = 5) {
+    async getPostsByUserId(userId: number, page = 1, limit = 10) {
         try {
-            const response = await axios.get(`post/user/${userId}`);
+            const response = await axios.get(`post/user/${userId}`, {
+                params: { page, limit }
+            });
             return response;
         } catch (error) {
-            console.error("Error fetching post detail:", error);
+            console.error("Error fetching user posts:", error);
+            throw error;
+        }
+    },
+
+    async getSavedPosts(userId: number, page = 1, limit = 10) {
+        try {
+            const response = await axios.get(`post/user/${userId}/saved`, {
+                params: { page, limit }
+            });
+            return response;
+        } catch (error) {
+            console.error("Error fetching saved posts:", error);
+            throw error;
+        }
+    },
+
+    async getUserReels(userId: number, page = 1, limit = 10) {
+        try {
+            const response = await axios.get(`post/user/${userId}/reels`, {
+                params: { page, limit }
+            });
+            return response;
+        } catch (error) {
+            console.error("Error fetching user reels:", error);
             throw error;
         }
     },

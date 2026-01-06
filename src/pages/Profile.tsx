@@ -4,7 +4,7 @@ import { Grid, Bookmark, Film, X, Loader, Heart, MessageCircle } from "lucide-re
 import { useSelector, useDispatch } from "react-redux";
 import ProfileHeader from "../components/ProfileHeader";
 import { RootState, AppDispatch } from "../redux/store";
-import { fetchProfileUserRequest, fetchSavedPostsRequest, fetchReelsRequest } from "../redux/features/user/userSlice";
+import { fetchProfileUserRequest, fetchSavedPostsRequest, fetchReelsRequest, fetchUserPostsRequest } from "../redux/features/user/userSlice";
 import { Post } from "../types/post.type";
 import PostModal from "../components/PostModal";
 import EditProfileModal from "../components/EditProfileModal";
@@ -14,36 +14,70 @@ export default function Profile() {
   const dispatch = useDispatch<AppDispatch>();
 
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
-  const { profileUser, userPosts, savedPosts, userReels, loading } = useSelector((state: RootState) => state.users);
+  const {
+    profileUser,
+    userPosts, userPostsHasMore, userPostsPage,
+    savedPosts, savedPostsHasMore, savedPostsPage,
+    userReels, userReelsHasMore, userReelsPage,
+    loading, postsLoading
+  } = useSelector((state: RootState) => state.users);
 
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "reels">("posts");
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
+  const isOwnProfile = userId === currentUser?.id.toString();
+
   // Fetch profile user when userId changes
   useEffect(() => {
     if (userId) {
       const id = parseInt(userId);
-      console.log("🔥 Fetching profile for userId:", id);
+      console.log("🔥 Fetching profile and initial posts for userId:", id);
       dispatch(fetchProfileUserRequest(id));
+      dispatch(fetchUserPostsRequest({ userId: id, page: 1 }));
       setActiveTab("posts"); // Reset tab
     }
-  }, [userId]);
+  }, [userId, dispatch]);
 
-  // Fetch data when tab changes
+  // Fetch data when tab changes or scroll for more
+  const fetchMoreData = () => {
+    if (!userId || postsLoading) return;
+    const id = parseInt(userId);
+
+    if (activeTab === "posts" && userPostsHasMore) {
+      dispatch(fetchUserPostsRequest({ userId: id, page: userPostsPage + 1 }));
+    } else if (activeTab === "saved" && savedPostsHasMore && isOwnProfile) {
+      dispatch(fetchSavedPostsRequest({ userId: id, page: savedPostsPage + 1 }));
+    } else if (activeTab === "reels" && userReelsHasMore) {
+      dispatch(fetchReelsRequest({ userId: id, page: userReelsPage + 1 }));
+    }
+  };
+
   useEffect(() => {
     if (!userId) return;
     const id = parseInt(userId);
 
-    if (activeTab === "saved" && isOwnProfile) {
-      dispatch(fetchSavedPostsRequest(id));
-    } else if (activeTab === "reels") {
-      dispatch(fetchReelsRequest(id));
-    } else if (activeTab === "posts") {
-      // usually fetched with profile user, but good to refresh?
-      // dispatch(fetchUserPostsRequest(id));
+    if (activeTab === "saved" && isOwnProfile && savedPosts.length === 0) {
+      dispatch(fetchSavedPostsRequest({ userId: id, page: 1 }));
+    } else if (activeTab === "reels" && userReels.length === 0) {
+      dispatch(fetchReelsRequest({ userId: id, page: 1 }));
     }
-  }, [activeTab, userId]);
+  }, [activeTab, userId, isOwnProfile, dispatch]);
+
+  // Infinite Scroll Listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 100
+      ) {
+        fetchMoreData();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [activeTab, userPostsHasMore, savedPostsHasMore, userReelsHasMore, userPostsPage, savedPostsPage, userReelsPage, postsLoading, userId]);
 
   if (!currentUser || !profileUser) {
     return (
@@ -52,8 +86,6 @@ export default function Profile() {
       </div>
     );
   }
-
-  const isOwnProfile = userId === currentUser.id.toString();
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -146,7 +178,7 @@ export default function Profile() {
                 </div>
                 <div className="flex items-center gap-3">
                   <MessageCircle size={28} className="text-white" />
-                  <span className="text-lg font-semibold">{(post.comments?.length ?? 0).toLocaleString()}</span>
+                  <span className="text-lg font-semibold">{(post.commentsCount ?? 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -173,7 +205,7 @@ export default function Profile() {
                 </div>
                 <div className="flex items-center gap-3">
                   <MessageCircle size={28} className="text-white" />
-                  <span className="text-lg font-semibold">{(post.comments?.length ?? 0).toLocaleString()}</span>
+                  <span className="text-lg font-semibold">{(post.commentsCount ?? 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -203,6 +235,13 @@ export default function Profile() {
           )
         )}
       </div>
+
+      {/* Loading indicator for more posts */}
+      {postsLoading && (
+        <div className="flex justify-center py-4">
+          <Loader className="animate-spin w-6 h-6 text-gray-400" />
+        </div>
+      )}
 
       {/* Edit Profile Modal */}
       {showEditModal && (
