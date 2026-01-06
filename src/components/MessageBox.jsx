@@ -22,12 +22,28 @@ export default function MessageBox({ chat }) {
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
 
+    // Hàm kiểm tra xem tin nhắn có phải từ user hiện tại không
+    const isCurrentUser = useCallback(
+        (senderId) => {
+            return user?.id && senderId === user.id.toString();
+        },
+        [user],
+    );
+
     // Hàm cuộn xuống cuối
     const scrollToBottom = useCallback((instant = false) => {
         if (messagesContainerRef.current) {
             const container = messagesContainerRef.current;
-            // Cuộn xuống cuối bằng cách đặt scrollTop bằng scrollHeight
-            container.scrollTop = container.scrollHeight;
+            if (instant) {
+                // Cuộn tức thời (dùng cho trường hợp đặc biệt)
+                container.scrollTop = container.scrollHeight;
+            } else {
+                // Cuộn mượt mà
+                container.scrollTo({
+                    top: container.scrollHeight,
+                    behavior: 'smooth',
+                });
+            }
         }
     }, []);
 
@@ -80,14 +96,10 @@ export default function MessageBox({ chat }) {
             !isLoadingMoreRef.current &&
             messagesContainerRef.current
         ) {
-            // Đợi DOM cập nhật, sau đó cuộn xuống cuối
+            // Đợi DOM cập nhật, sau đó cuộn xuống cuối tức thời (không smooth)
             const timer = setTimeout(() => {
-                if (messagesContainerRef.current) {
-                    const container = messagesContainerRef.current;
-                    // Buộc cuộn xuống cuối
-                    container.scrollTop = container.scrollHeight;
-                    shouldScrollToBottomRef.current = false;
-                }
+                scrollToBottom(true);
+                shouldScrollToBottomRef.current = false;
             }, 100);
 
             return () => clearTimeout(timer);
@@ -96,36 +108,41 @@ export default function MessageBox({ chat }) {
 
     // Tự động cuộn xuống khi có tin nhắn mới (không phải khi đang tải thêm tin nhắn cũ)
     const previousMessagesLengthRef = useRef(0);
+    const previousMessagesRef = useRef([]);
+
     useEffect(() => {
         if (
             messagesContainerRef.current &&
-            !loading &&
             !loadingMore &&
             !isLoadingMoreRef.current &&
             messages.length > previousMessagesLengthRef.current
         ) {
             const container = messagesContainerRef.current;
-            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 
-            // Chỉ cuộn xuống nếu user đang ở gần cuối trang (trong vòng 100px)
-            // Hoặc nếu tin nhắn mới là từ user hiện tại (tin nhắn mình gửi)
+            // Tính toán khoảng cách từ cuối trang (threshold lớn hơn để dễ phát hiện)
+            const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+            const isNearBottom = scrollBottom < 150; // Tăng threshold lên 150px
+
+            // Lấy tin nhắn mới nhất
             const lastMessage = messages[messages.length - 1];
             const isFromCurrentUser = lastMessage && isCurrentUser(lastMessage.senderId);
 
-            if (isNearBottom || isFromCurrentUser) {
-                // Đợi DOM cập nhật, sau đó cuộn xuống cuối
+            // Cuộn xuống nếu:
+            // 1. Tin nhắn là từ user hiện tại (người gửi) - luôn cuộn
+            // 2. Hoặc người nhận đang ở gần cuối trang (trong vòng 150px)
+            if (isFromCurrentUser || isNearBottom) {
+                // Đợi DOM cập nhật, sau đó cuộn xuống cuối với smooth scroll
                 const timer = setTimeout(() => {
-                    if (messagesContainerRef.current) {
-                        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-                    }
-                }, 50);
+                    scrollToBottom(false);
+                }, 100); // Giảm timeout một chút vì smooth scroll tự động xử lý animation
 
                 return () => clearTimeout(timer);
             }
         }
 
         previousMessagesLengthRef.current = messages.length;
-    }, [messages, loading, loadingMore]);
+        previousMessagesRef.current = messages;
+    }, [messages, loading, loadingMore, isCurrentUser]);
 
     // Đặt lại cờ tải thêm khi loadingMore thay đổi
     useEffect(() => {
@@ -136,6 +153,7 @@ export default function MessageBox({ chat }) {
 
     // Xử lý sự kiện đang gõ
     const handleTyping = useCallback(() => {
+        // Chỉ gửi typing event nếu đã có conversationId
         if (!selectedConversationId) return;
 
         const socket = getSocket();
@@ -163,6 +181,7 @@ export default function MessageBox({ chat }) {
 
     // Dừng trạng thái đang gõ khi gửi tin nhắn
     const stopTyping = useCallback(() => {
+        // Chỉ gửi typing_stop nếu đã có conversationId
         if (!selectedConversationId) return;
 
         const socket = getSocket();
@@ -190,11 +209,27 @@ export default function MessageBox({ chat }) {
 
     const handleSend = (e) => {
         e.preventDefault();
-        if (!message.trim() || !selectedConversationId) return;
+        if (!message.trim()) return;
 
-        stopTyping();
-        dispatch(sendMessageRequest({ conversationId: selectedConversationId, content: message }));
+        // Nếu có conversationId, gửi tin nhắn trong conversation
+        // Nếu không có conversationId nhưng có userId (chat), gửi tin nhắn với recipientId
+        if (selectedConversationId) {
+            stopTyping();
+            dispatch(sendMessageRequest({ conversationId: selectedConversationId, content: message }));
+        } else if (chat?.userId) {
+            stopTyping();
+            dispatch(sendMessageRequest({ recipientId: chat.userId, content: message }));
+        } else {
+            return;
+        }
+
         setMessage('');
+
+        // Cuộn xuống cuối ngay sau khi gửi tin nhắn (trước khi tin nhắn được thêm vào state)
+        // Logic cuộn chính sẽ được xử lý trong useEffect khi tin nhắn được thêm vào state
+        setTimeout(() => {
+            scrollToBottom(true);
+        }, 50);
     };
 
     const handleMessageChange = (e) => {
@@ -213,10 +248,6 @@ export default function MessageBox({ chat }) {
             </div>
         );
     }
-
-    const isCurrentUser = (senderId) => {
-        return user?.id && senderId === user.id.toString();
-    };
 
     return (
         <div className="flex-1 flex flex-col h-full">
@@ -294,13 +325,14 @@ export default function MessageBox({ chat }) {
                         value={message}
                         onChange={handleMessageChange}
                         className="flex-1 input-field"
+                        disabled={!selectedConversationId && !chat?.userId}
                     />
                     <button type="button" className="p-2 hover:text-gray-500 transition-colors">
                         <Heart className="w-6 h-6" />
                     </button>
                     <button
                         type="submit"
-                        disabled={!message.trim() || loading}
+                        disabled={!message.trim() || loading || (!selectedConversationId && !chat?.userId)}
                         className="text-ig-primary font-semibold disabled:opacity-50"
                     >
                         <Send className="w-6 h-6" />

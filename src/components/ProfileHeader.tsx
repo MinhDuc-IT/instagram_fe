@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Settings, MoreHorizontal, Loader } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toggleFollowInPost } from '../redux/features/post/postSlice';
@@ -17,6 +18,7 @@ interface ProfileHeaderProps {
 }
 
 export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, onEditProfile }: ProfileHeaderProps) {
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     const [isFollowing, setIsFollowing] = useState(profileUser?.isFollowing || false);
     const [followersCount, setFollowersCount] = useState(profileUser?.followers ?? 0);
@@ -63,6 +65,12 @@ export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, 
             setLoading(false);
         }
     };
+
+    const handleMessage = (userId: number) => {
+        // Chỉ navigate đến messages page với userId, không tạo conversation
+        // Conversation sẽ được tạo tự động khi gửi tin nhắn đầu tiên
+        navigate(`/messages?userId=${userId}`);
+    };
     return (
         <div className="px-4 md:px-12 py-8 max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row gap-8">
@@ -107,8 +115,11 @@ export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, 
                                         'Follow'
                                     )}
                                 </button>
-                                <button className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-black dark:text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors">
+                                <button onClick={() => handleMessage(profileUser.id)} className="btn-secondary">
                                     Message
+                                </button>
+                                <button className="btn-secondary">
+                                    <MoreHorizontal className="w-5 h-5" />
                                 </button>
                                 {/* <button className="btn-secondary">
                                     <MoreHorizontal className="w-5 h-5" />

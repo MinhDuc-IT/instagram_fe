@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { RootState } from '../redux/store';
 import {
     fetchNotificationsRequest,
@@ -15,6 +16,7 @@ import { toast } from 'react-toastify';
 
 export default function Notifications() {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { notifications, loading, unreadCount, hasMore, loadingMore } = useSelector(
         (state: RootState) => state.notification,
     );
@@ -78,10 +80,17 @@ export default function Notifications() {
         console.log('🔔 Notification clicked:', notification);
         console.log('🔔 Notification postId:', notification.postId);
         console.log('🔔 Notification commentId:', notification.commentId);
+        console.log('🔔 Notification type:', notification.type);
 
         // Đánh dấu đã đọc nếu chưa đọc
         if (!notification.isRead) {
             dispatch(markAsReadRequest(notification.id));
+        }
+
+        // Nếu là notification follow, chuyển đến profile của người gửi
+        if (notification.type === 'follow' && notification.senderId) {
+            navigate(`/profile/${notification.senderId}`);
+            return;
         }
 
         // Nếu có postId, mở PostModal

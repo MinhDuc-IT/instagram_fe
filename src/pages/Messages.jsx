@@ -2,28 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 import {
     fetchConversationsRequest,
     selectConversation,
     fetchMessagesRequest,
     markAsReadRequest,
 } from '../redux/features/message/messageSlice';
+import { fetchProfileUserRequest } from '../redux/features/user/userSlice';
 import { useSocket } from '../hooks/useSocket';
 import ChatList from '../components/ChatList';
 import MessageBox from '../components/MessageBox';
 
 export default function Messages() {
     const dispatch = useDispatch();
+    const [searchParams] = useSearchParams();
     const { conversations, loading, error } = useSelector((state) => state.message);
+    const { profileUser } = useSelector((state) => state.users);
     const [selectedChat, setSelectedChat] = useState(null);
 
     // Khởi tạo kết nối socket
     useSocket();
-
-    useEffect(() => {
-        // Lấy danh sách cuộc hội thoại khi component được mount
-        dispatch(fetchConversationsRequest());
-    }, [dispatch]);
 
     const handleSelectChat = (chat) => {
         setSelectedChat(chat);
@@ -35,6 +34,71 @@ export default function Messages() {
             dispatch(fetchMessagesRequest({ conversationId: chat.id, reset: true }));
         }
     };
+
+    useEffect(() => {
+        // Lấy danh sách cuộc hội thoại khi component được mount
+        dispatch(fetchConversationsRequest());
+    }, [dispatch]);
+
+    // Tự động select conversation hoặc user nếu có conversationId hoặc userId trong query params
+    useEffect(() => {
+        const conversationId = searchParams.get('conversationId');
+        const userId = searchParams.get('userId');
+
+        if (conversationId && conversations.length > 0 && (!selectedChat || selectedChat.id !== conversationId)) {
+            // Tìm conversation trong danh sách
+            const conversation = conversations.find((conv) => conv.id === conversationId);
+            if (conversation) {
+                handleSelectChat({
+                    id: conversation.id,
+                    username: conversation.participant.username,
+                    name: conversation.participant.fullName || conversation.participant.username,
+                    avatar: conversation.participant.avatar,
+                });
+            }
+        } else if (userId && (!selectedChat || selectedChat.userId !== userId)) {
+            // Tìm conversation với user này trong danh sách
+            const conversation = conversations.find((conv) => conv.participant.id === userId);
+
+            if (conversation) {
+                // Nếu đã có conversation, chọn nó
+                handleSelectChat({
+                    id: conversation.id,
+                    username: conversation.participant.username,
+                    name: conversation.participant.fullName || conversation.participant.username,
+                    avatar: conversation.participant.avatar,
+                });
+            } else {
+                // Nếu chưa có conversation, fetch user info và tạo chat object với userId
+                const userIdNum = parseInt(userId, 10);
+                if (!isNaN(userIdNum)) {
+                    dispatch(fetchProfileUserRequest(userIdNum));
+                }
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, conversations]);
+
+    // Cập nhật selectedChat khi có profileUser (sau khi fetch user info)
+    useEffect(() => {
+        const userId = searchParams.get('userId');
+        if (userId && profileUser && profileUser.id.toString() === userId) {
+            // Kiểm tra xem đã có conversation chưa
+            const conversation = conversations.find((conv) => conv.participant.id === userId);
+
+            if (!conversation) {
+                // Chưa có conversation, tạo chat object với userId
+                setSelectedChat({
+                    userId: userId,
+                    id: null, // Chưa có conversationId
+                    username: profileUser.username || '',
+                    name: profileUser.fullName || profileUser.username || '',
+                    avatar: profileUser.avatar || '',
+                });
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [profileUser, conversations, searchParams]);
 
     // Chuyển đổi cuộc hội thoại để khớp với định dạng mong đợi của ChatList
     const transformedChats = conversations.map((conv) => ({

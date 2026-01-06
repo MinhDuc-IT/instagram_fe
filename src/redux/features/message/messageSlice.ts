@@ -77,10 +77,7 @@ export const messageSlice = createSlice({
         fetchConversationsSuccess: (state, action: PayloadAction<Conversation[]>) => {
             state.conversations = action.payload;
             // Cập nhật totalUnreadMessages từ conversations mới fetch
-            state.totalUnreadMessages = action.payload.reduce(
-                (sum, conv) => sum + (conv.unreadCount || 0),
-                0
-            );
+            state.totalUnreadMessages = action.payload.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
             state.loading = false;
             state.error = null;
         },
@@ -142,7 +139,10 @@ export const messageSlice = createSlice({
         },
 
         // Gửi tin nhắn
-        sendMessageRequest: (state, _action: PayloadAction<{ conversationId: string; content: string }>) => {
+        sendMessageRequest: (
+            state,
+            _action: PayloadAction<{ conversationId?: string; recipientId?: string; content: string }>,
+        ) => {
             state.loading = true;
             state.error = null;
         },
@@ -163,6 +163,13 @@ export const messageSlice = createSlice({
         // Thêm tin nhắn mới (từ socket.io)
         addNewMessage: (state, action: PayloadAction<Message>) => {
             const message = action.payload;
+            console.log(
+                'addNewMessage - Updating conversation:',
+                message.conversationId,
+                'with message:',
+                message.content,
+            );
+
             // Thêm vào tin nhắn nếu thuộc cuộc trò chuyện hiện tại và chưa tồn tại
             if (message.conversationId === state.selectedConversationId) {
                 const exists = state.messages.some((m) => m.id === message.id);
@@ -170,18 +177,44 @@ export const messageSlice = createSlice({
                     state.messages.push(message);
                 }
             }
-            // Cập nhật tin nhắn cuối của cuộc trò chuyện
-            const conversation = state.conversations.find((c) => c.id === message.conversationId);
-            if (conversation) {
-                conversation.lastMessage = {
-                    id: message.id,
-                    content: message.content,
-                    senderId: message.senderId,
-                    createdAt: message.createdAt,
+
+            // Luôn cập nhật tin nhắn cuối của cuộc trò chuyện và di chuyển lên đầu (cho tất cả conversation)
+            const conversationIndex = state.conversations.findIndex((c) => c.id === message.conversationId);
+            if (conversationIndex !== -1) {
+                const conversation = state.conversations[conversationIndex];
+                console.log(
+                    'addNewMessage - Before update, conversation.lastMessage:',
+                    conversation.lastMessage?.content,
+                );
+
+                // Tạo conversation mới với lastMessage được cập nhật để đảm bảo React nhận biết thay đổi
+                const updatedConversation = {
+                    ...conversation,
+                    lastMessage: {
+                        id: message.id,
+                        content: message.content,
+                        senderId: message.senderId,
+                        createdAt: message.createdAt,
+                    },
+                    updatedAt: message.createdAt,
                 };
-                conversation.updatedAt = message.createdAt;
+
+                console.log(
+                    'addNewMessage - After update, updatedConversation.lastMessage:',
+                    updatedConversation.lastMessage?.content,
+                );
+
                 // Di chuyển cuộc trò chuyện lên đầu
-                state.conversations = [conversation, ...state.conversations.filter((c) => c.id !== conversation.id)];
+                const updatedConversations = [...state.conversations];
+                updatedConversations.splice(conversationIndex, 1);
+                state.conversations = [updatedConversation, ...updatedConversations];
+
+                console.log(
+                    'addNewMessage - After reorder, first conversation lastMessage:',
+                    state.conversations[0]?.lastMessage?.content,
+                );
+            } else {
+                console.warn('addNewMessage - Conversation not found:', message.conversationId);
             }
         },
 
@@ -205,10 +238,7 @@ export const messageSlice = createSlice({
             if (conversation) {
                 conversation.unreadCount = Math.max(0, conversation.unreadCount - action.payload.readCount);
                 // Cập nhật totalUnreadMessages
-                state.totalUnreadMessages = state.conversations.reduce(
-                    (sum, conv) => sum + (conv.unreadCount || 0),
-                    0
-                );
+                state.totalUnreadMessages = state.conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
             }
         },
         markAsReadFailure: (state, _action: PayloadAction<string>) => {
@@ -253,13 +283,29 @@ export const messageSlice = createSlice({
             if (conversation) {
                 conversation.unreadCount = (conversation.unreadCount || 0) + 1;
                 // Cập nhật totalUnreadMessages
-                state.totalUnreadMessages = state.conversations.reduce(
-                    (sum, conv) => sum + (conv.unreadCount || 0),
-                    0
-                );
+                state.totalUnreadMessages = state.conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
             } else {
                 // Nếu conversation chưa có trong state (chưa fetch conversations), tăng totalUnreadMessages
                 state.totalUnreadMessages = (state.totalUnreadMessages || 0) + 1;
+            }
+        },
+
+        // Cập nhật conversation từ notification (cập nhật updatedAt và di chuyển lên đầu)
+        // Được gọi khi nhận new_message_notification (không có message data đầy đủ)
+        updateConversationFromNotification: (
+            state,
+            action: PayloadAction<{ conversationId: string; timestamp: string }>,
+        ) => {
+            const conversationIndex = state.conversations.findIndex((c) => c.id === action.payload.conversationId);
+            if (conversationIndex !== -1) {
+                const conversation = state.conversations[conversationIndex];
+                // Cập nhật updatedAt để conversation được sắp xếp lại
+                conversation.updatedAt = action.payload.timestamp;
+
+                // Di chuyển conversation lên đầu
+                const updatedConversations = [...state.conversations];
+                updatedConversations.splice(conversationIndex, 1);
+                state.conversations = [conversation, ...updatedConversations];
             }
         },
     },
@@ -286,6 +332,7 @@ export const {
     clearTypingUser,
     clearAllTypingUsers,
     incrementConversationUnreadCount,
+    updateConversationFromNotification,
 } = messageSlice.actions;
 
 export default messageSlice.reducer;

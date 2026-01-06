@@ -12,11 +12,13 @@ import {
     markAsReadRequest,
     markAsReadSuccess,
     markAsReadFailure,
+    selectConversation,
 } from './messageSlice';
 import {
     getConversationsApi,
     getMessagesApi,
     sendMessageApi,
+    sendMessageToUserApi,
     markMessagesAsReadApi,
 } from '../../../service/messageService';
 import { Conversation, Message } from './messageSlice';
@@ -64,9 +66,28 @@ function* handleFetchMessages(action: ReturnType<typeof fetchMessagesRequest>) {
 // Gửi tin nhắn
 function* handleSendMessage(action: ReturnType<typeof sendMessageRequest>) {
     try {
-        const { conversationId, content } = action.payload;
-        const res: Message = yield call(sendMessageApi, conversationId, content);
+        const { conversationId, recipientId, content } = action.payload;
+        let res: Message;
+
+        if (conversationId) {
+            // Gửi tin nhắn trong conversation đã có
+            res = yield call(sendMessageApi, conversationId, content);
+        } else if (recipientId) {
+            // Gửi tin nhắn đến user (tự động tạo conversation nếu chưa có)
+            res = yield call(sendMessageToUserApi, recipientId, content);
+            // Sau khi gửi tin nhắn thành công, cập nhật selectedConversationId và fetch messages
+            if (res.conversationId) {
+                yield put(selectConversation(res.conversationId));
+                // Fetch messages cho conversation mới
+                yield put(fetchMessagesRequest({ conversationId: res.conversationId, reset: true }));
+            }
+        } else {
+            throw new Error('Cần có conversationId hoặc recipientId');
+        }
+
         yield put(sendMessageSuccess(res));
+        // Refresh conversations để có conversation mới
+        yield put(fetchConversationsRequest());
     } catch (error: any) {
         yield put(sendMessageFailure(error.response?.data?.message || 'Gửi tin nhắn thất bại'));
     }

@@ -89,8 +89,8 @@ export const useNotifications = () => {
             dispatch(updateUnreadCount(data.count));
         };
 
-        // Lắng nghe message notification (chỉ để tăng unread count cho conversation, không lưu vào notification list)
-        const handleMessageNotification = (data: {
+        // Lắng nghe message notification (cập nhật conversation và tăng unread count)
+        const handleMessageNotification = async (data: {
             type: string;
             senderId: number;
             senderName: string;
@@ -99,14 +99,20 @@ export const useNotifications = () => {
         }) => {
             console.log('💬 Message notification received:', data);
 
+            const conversationIdStr = data.conversationId.toString();
+
             // Chỉ tăng unread count nếu KHÔNG đang mở cuộc hội thoại này
             // Nếu đang mở, tin nhắn sẽ được tự động mark as read trong useSocket
-            const isCurrentConversation = selectedConversationId === data.conversationId.toString();
+            const isCurrentConversation = selectedConversationId === conversationIdStr;
 
             if (!isCurrentConversation) {
                 // Tăng unread count cho conversation tương ứng
-                dispatch(incrementConversationUnreadCount({ conversationId: data.conversationId.toString() }));
+                dispatch(incrementConversationUnreadCount({ conversationId: conversationIdStr }));
             }
+
+            // - Backend đã emit 'new_message' đến user rooms (tất cả users trong conversation)
+            // - useSocket sẽ nhận 'new_message' event và dispatch addNewMessage
+            // - addNewMessage sẽ tự động cập nhật lastMessage, updatedAt và pin conversation lên đầu
 
             // Hiển thị toast notification (badge ở góc trên bên phải)
             // KHÔNG thêm vào notification list và KHÔNG tăng unreadCount của notifications
