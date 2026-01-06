@@ -10,6 +10,7 @@ export interface User {
     gender?: boolean;
     avatar?: string;
     bio?: string | null;
+    website?: string | null;
     posts?: number;
     followers?: number;
     following?: number;
@@ -58,6 +59,9 @@ export interface LoginResponse {
 export interface UpdateProfilePayload {
     fullName?: string;
     username?: string;
+    bio?: string;
+    website?: string;
+    avatar?: string;
 }
 
 // Slice
