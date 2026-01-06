@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { useSelector } from 'react-redux';
@@ -20,7 +21,18 @@ import SocialLogin from './pages/SocialLogin';
 
 export default function AppContent() {
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
-    
+    const theme = useSelector((state: RootState) => state.theme.theme);
+
+    // Sync theme to DOM
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
     // Khởi tạo socket connection cho notifications
     useNotifications();
 
@@ -42,7 +54,9 @@ export default function AppContent() {
                     <Route
                         path="/home"
                         element={
-                            <Home />
+                            <ProtectedRoute>
+                                <Home />
+                            </ProtectedRoute>
                         }
                     />
                     <Route

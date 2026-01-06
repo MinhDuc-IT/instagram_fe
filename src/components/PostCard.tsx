@@ -1,12 +1,14 @@
 import { DataUtil } from "../utils/DataUtil"
 import { Heart, ChevronLeft, ChevronRight, MoreHorizontal, MessageCircle, Send, Bookmark } from "lucide-react"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { useState } from "react"
-import { toggleLikeOptimistic } from "../redux/features/post/postSlice"
+import { toggleLikeOptimistic, toggleFollowInPost } from "../redux/features/post/postSlice"
 import { Post } from "../types/post.type"
-import { toggleSavePost } from "../redux/features/user/userSlice"
+import { toggleSavePost, toggleFollow } from "../redux/features/user/userSlice"
 import { useNavigate } from "react-router-dom"
 import { PostService } from "../service/postService"
+import { FollowService } from "../service/followService"
+import { RootState } from "../redux/store"
 
 interface PostCardProps {
   post: Post;
@@ -16,9 +18,11 @@ interface PostCardProps {
 export default function PostCard({ post, onPostClick }: PostCardProps) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const currentUserId = useSelector((state: RootState) => state.auth.user?.id)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showFullCaption, setShowFullCaption] = useState(false)
   const [isSaved, setIsSaved] = useState(post.isSaved ?? false)
+  const [isFollowing, setIsFollowing] = useState(post.isFollowing ?? false)
 
   const hasMedia = post.media && post.media.length > 0
   const isMultiple = (post.media?.length ?? 0) > 1
@@ -78,13 +82,42 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
     setShowFullCaption(!showFullCaption)
   }
 
+  const handleFollow = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const originalIsFollowing = isFollowing
+    const newIsFollowing = !originalIsFollowing
+
+    // Optimistic update
+    setIsFollowing(newIsFollowing)
+    // Update posts in home feed
+    dispatch(toggleFollowInPost(post.userId))
+    // Update user in users list (for profile)
+    dispatch(toggleFollow(post.userId))
+
+    try {
+      await FollowService.followUser(post.userId)
+      console.log('Follow/Unfollow user:', post.userId, newIsFollowing)
+    } catch (err) {
+      console.error("Follow API failed", err)
+      // Rollback on error
+      setIsFollowing(originalIsFollowing)
+      dispatch(toggleFollowInPost(post.userId))
+      dispatch(toggleFollow(post.userId))
+    }
+  }
+
+  const isOwnPost = currentUserId && String(currentUserId) === String(post.userId)
+
+  const stories = useSelector((state: RootState) => state.story.stories)
+  const hasStory = stories.some(s => s.user.id === post.userId)
+
   return (
-    <article className="bg-white mb-6 cursor-pointer" onClick={handleCardClick}>
+    <article className="bg-white dark:bg-black mb-6 cursor-pointer" onClick={handleCardClick}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-3 cursor-pointer" onClick={handleProfileClick}>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 p-[2px]">
-            <div className="w-full h-full rounded-full bg-white p-[2px]">
+          <div className={`w-8 h-8 rounded-full p-[2px] ${hasStory ? "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500" : ""}`}>
+            <div className="w-full h-full rounded-full bg-white dark:bg-black p-[2px]">
               <img
                 src={post.userAvatar || `https://ui-avatars.com/api/?name=${post.username}&background=random`}
                 alt={post.username}
@@ -93,7 +126,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <span className="font-semibold text-sm hover:text-gray-600">{post.username}</span>
+            <span className="font-semibold text-sm hover:text-gray-600 dark:hover:text-gray-300 dark:text-white">{post.username}</span>
             {post.createdDate && (
               <>
                 <span className="text-gray-400">•</span>
@@ -102,13 +135,26 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
             )}
           </div>
         </div>
-        <button className="p-2 hover:text-gray-500" onClick={(e) => e.stopPropagation()}>
-          <MoreHorizontal size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          {!isOwnPost && (
+            <button
+              onClick={handleFollow}
+              className={`px-3 py-1 text-xs font-semibold rounded transition ${isFollowing
+                ? "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
+            >
+              {isFollowing ? "Following" : "Follow"}
+            </button>
+          )}
+          <button className="p-2 hover:text-gray-500 dark:text-white dark:hover:text-gray-300" onClick={(e) => e.stopPropagation()}>
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Media Carousel */}
-      <div className="relative bg-black aspect-square border-y border-gray-200">
+      <div className="relative bg-black aspect-square border-y border-gray-200 dark:border-gray-800">
         {!hasMedia ? (
           <div className="flex items-center justify-center h-full text-white">No media</div>
         ) : (
@@ -172,6 +218,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
                 size={24}
                 fill={post.isLiked ? "#ed4956" : "none"}
                 color={post.isLiked ? "#ed4956" : "currentColor"}
+                className={post.isLiked ? "" : "dark:text-white"}
                 strokeWidth={post.isLiked ? 0 : 2}
               />
               {post.likeCount != null && post.likeCount > 0 && !post.isLikesHidden && (
@@ -182,13 +229,13 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
               e.stopPropagation()
               handleCardClick()
             }}>
-              <MessageCircle size={24} strokeWidth={2} />
+              <MessageCircle size={24} strokeWidth={2} className="dark:text-white" />
               {post.commentsCount != null && !post.isCommentsDisabled && (
-                <span className="text-sm font-semibold">{DataUtil.formatlikeCount(post.commentsCount)}</span>
+                <span className="text-sm font-semibold dark:text-white">{DataUtil.formatlikeCount(post.commentsCount)}</span>
               )}
             </button>
             <button className="hover:text-gray-500 transition" onClick={(e) => e.stopPropagation()}>
-              <Send size={24} strokeWidth={2} />
+              <Send size={24} strokeWidth={2} className="dark:text-white" />
             </button>
           </div>
           <button onClick={handleSave} className="hover:text-gray-500 transition">
@@ -205,10 +252,10 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
         {/* Caption */}
         {post.caption && (
           <div className="text-sm">
-            <span className="font-semibold mr-1 cursor-pointer hover:text-gray-600" onClick={handleProfileClick}>
+            <span className="font-semibold mr-1 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 dark:text-white" onClick={handleProfileClick}>
               {post.username}
             </span>
-            <span className="text-gray-900">
+            <span className="text-gray-900 dark:text-gray-100">
               {needsTruncate && !showFullCaption
                 ? post.caption.slice(0, captionLimit) + '...'
                 : post.caption
@@ -227,7 +274,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
 
         {/* Comment Count */}
         {post.commentsCount != null && post.commentsCount > 0 && (
-          <button className="text-sm text-gray-500 mt-1" onClick={(e) => e.stopPropagation()}>
+          <button className="text-sm text-gray-500 dark:text-gray-400 mt-1" onClick={(e) => e.stopPropagation()}>
             View all {post.commentsCount} comments
           </button>
         )}

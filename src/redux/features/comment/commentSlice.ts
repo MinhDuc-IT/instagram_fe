@@ -109,7 +109,10 @@ export const commentSlice = createSlice({
         addCommentFromSocket: (state, action: PayloadAction<any>) => {
             const incoming = action.payload;
 
-            if (state.comments.some((c) => c.id === incoming.id)) return;
+            if (state.comments.some((c) => c.id === incoming.id)) {
+                console.log('Duplicate comment ID detected, skipping socket update:', incoming.id);
+                return;
+            }
 
             const isReply = !!incoming?.replyToUser;
             if (!isReply) {
@@ -131,7 +134,10 @@ export const commentSlice = createSlice({
                 if (!repliesState) return; // chưa mở replies → không ép mở
 
                 // Tránh duplicate trong replies
-                if (repliesState?.replies?.some((r: any) => r.id === incoming.id)) return;
+                if (repliesState?.replies?.some((r: any) => r.id === incoming.id)) {
+                    console.log('Duplicate reply ID detected in repliesState, skipping:', incoming.id);
+                    return;
+                }
 
                 // Thêm reply vào danh sách
                 repliesState.replies.push(incoming);

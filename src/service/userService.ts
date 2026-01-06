@@ -58,6 +58,8 @@ export const getUserByIdApi = async (userId: number): Promise<User> => {
         followers: data.followers || 0,
         following: data.following || 0,
         posts: data.posts || 0,
+        phone: data.phone,
+        gender: data.gender,
         isFollowing: data.isFollowing || false,
     } as User;
 };

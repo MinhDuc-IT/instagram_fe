@@ -102,14 +102,14 @@ export default function StoryViewerModal({ group, onClose }: Props) {
                 {/* Content */}
                 <div className="w-full h-full flex items-center justify-center bg-black">
                     {currentStory.postId && currentStory.post ? (
-                        <div className="w-[85%] bg-white rounded-xl overflow-hidden shadow-2xl p-3">
+                        <div className="w-[85%] bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-2xl p-3">
                             {/* Shared Post Header */}
                             <div className="flex items-center gap-2 mb-2">
                                 <img
                                     src={currentStory.post.User?.avatar || "/placeholder.svg"}
                                     className="w-8 h-8 rounded-full object-cover"
                                 />
-                                <span className="font-semibold text-black text-sm">
+                                <span className="font-semibold text-black dark:text-white text-sm">
                                     {currentStory.post.User?.userName}
                                 </span>
                             </div>
@@ -133,7 +133,7 @@ export default function StoryViewerModal({ group, onClose }: Props) {
                             </div>
 
                             {/* Shared Post Caption */}
-                            <div className="text-black text-sm line-clamp-2">
+                            <div className="text-black dark:text-white text-sm line-clamp-2">
                                 <span className="font-semibold mr-1">{currentStory.post.User?.userName}</span>
                                 {currentStory.post.caption}
                             </div>

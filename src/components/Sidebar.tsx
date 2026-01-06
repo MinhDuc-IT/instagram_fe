@@ -6,7 +6,6 @@ import { Home, Compass, Clapperboard, Film, MessageCircle, Heart, PlusSquare, Lo
 import { useDispatch, useSelector } from "react-redux";
 import { logoutRequest } from "../redux/features/auth/authSlice";
 import ThemeToggle from "./ThemeToggle";
-import ModalCreatePost from "./ModalCreatePost";
 import CreatePostModal from "./CreatePost";
 import type { RootState, AppDispatch } from "../redux/store";
 
@@ -37,10 +36,10 @@ export default function Sidebar() {
   const [openPostModal, setOpenPostModal] = useState < boolean > (false);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated && location.pathname !== "/home") {
+    if (!loading && !isAuthenticated) {
       navigate("/login");
     }
-  }, [isAuthenticated, loading, navigate, location.pathname]);
+  }, [isAuthenticated, loading, navigate]);
 
   const navItems: NavItem[] = [
     { path: "/home", icon: Home, label: "Home" },
@@ -87,20 +86,20 @@ export default function Sidebar() {
             );
           })}
 
-          <button
+          {/* <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors w-full"
           >
             <PlusSquare className="w-6 h-6" />
             <span>Create</span>
-          </button>
+          </button> */}
 
           <button
             onClick={() => setOpenPostModal(true)}
             className="flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors w-full"
           >
             <PlusSquare className="w-6 h-6" />
-            <span>Create Post v2</span>
+            <span>Create</span>
           </button>
 
           <Link
@@ -134,7 +133,7 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {showCreateModal && <ModalCreatePost onClose={() => setShowCreateModal(false)} />}
+      {/* {showCreateModal && <ModalCreatePost onClose={() => setShowCreateModal(false)} />} */}
 
       <CreatePostModal open={openPostModal} onClose={() => setOpenPostModal(false)} />
     </>

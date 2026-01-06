@@ -1,5 +1,4 @@
 import { Post } from "@/src/types/post.type";
-import { Story } from "@/src/types/story.type";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface PostState {
@@ -30,7 +29,7 @@ const postSlice = createSlice({
     fetchHomeFeed(state) {
       state.loading = true
       state.loadingMore = false
-    //   state.posts = []
+      //   state.posts = []
       state.currentPage = 1
       state.hasMore = true
     },
@@ -81,13 +80,35 @@ const postSlice = createSlice({
 
     // Toggle save
     toggleSavePost(
-      state, 
+      state,
       action: PayloadAction<{ postId: string; isSaved: boolean }>
     ) {
       const post = state.posts.find(p => p.id === action.payload.postId)
       if (post) {
         post.isSaved = action.payload.isSaved
       }
+    },
+
+    // Toggle follow - updates all posts by the user
+    toggleFollowInPost(state, action: PayloadAction<number>) {
+      const userId = action.payload
+      state.posts = state.posts.map(post =>
+        post.userId === userId
+          ? { ...post, isFollowing: !post.isFollowing }
+          : post
+      )
+    },
+
+    // Create Post
+    createPostRequest(state, _action: PayloadAction<{ caption: string; image: File; location?: string, visibility: string, isLikesHidden: boolean, isCommentsDisabled: boolean }>) {
+      state.loading = true;
+    },
+    createPostSuccess(state, action: PayloadAction<Post>) {
+      state.loading = false;
+      state.posts.unshift(action.payload);
+    },
+    createPostFailure(state, _action: PayloadAction<string>) {
+      state.loading = false;
     },
   },
 })
@@ -101,6 +122,10 @@ export const {
   fetchMorePostsFailure,
   toggleLikeOptimistic,
   toggleSavePost,
+  toggleFollowInPost,
+  createPostRequest,
+  createPostSuccess,
+  createPostFailure,
 } = postSlice.actions
 
 export default postSlice.reducer

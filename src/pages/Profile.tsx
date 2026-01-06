@@ -45,12 +45,6 @@ export default function Profile() {
     }
   }, [activeTab, userId]);
 
-  // useEffect(() => {
-  //   if (currentUser) {
-  //     setEditForm({ fullName: currentUser.fullName || "" });
-  //   }
-  // }, [currentUser]);
-
   if (!currentUser || !profileUser) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -60,13 +54,6 @@ export default function Profile() {
   }
 
   const isOwnProfile = userId === currentUser.id.toString();
-
-  // const handleEditSubmit = (e: FormEvent) => {
-  //   e.preventDefault();
-  //   console.log("Submitting edit profile with:", editForm);
-  //   dispatch(updateProfileRequest({ fullName: editForm.fullName }));
-  //   setShowEditModal(false);
-  // };
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -220,7 +207,7 @@ export default function Profile() {
       {/* Edit Profile Modal */}
       {showEditModal && (
         <EditProfileModal
-          user={currentUser}
+          user={profileUser as any}
           onClose={() => setShowEditModal(false)}
         />
       )}

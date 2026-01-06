@@ -44,4 +44,5 @@ export interface Post {
   commentsCount?: number;
   isLiked?: boolean;
   isSaved?: boolean;
+  isFollowing?: boolean;
 }
