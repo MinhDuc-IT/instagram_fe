@@ -22,7 +22,8 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showFullCaption, setShowFullCaption] = useState(false)
   const [isSaved, setIsSaved] = useState(post.isSaved ?? false)
-  const [isFollowing, setIsFollowing] = useState(post.isFollowing ?? false)
+
+  const isFollowing = post.isFollowing ?? false
 
   const hasMedia = post.media && post.media.length > 0
   const isMultiple = (post.media?.length ?? 0) > 1
@@ -87,9 +88,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
     const originalIsFollowing = isFollowing
     const newIsFollowing = !originalIsFollowing
 
-    // Optimistic update
-    setIsFollowing(newIsFollowing)
-    // Update posts in home feed
+    // Update posts in home feed via Redux (optimistic)
     dispatch(toggleFollowInPost(post.userId))
     // Update user in users list (for profile)
     dispatch(toggleFollow(post.userId))
@@ -100,7 +99,6 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
     } catch (err) {
       console.error("Follow API failed", err)
       // Rollback on error
-      setIsFollowing(originalIsFollowing)
       dispatch(toggleFollowInPost(post.userId))
       dispatch(toggleFollow(post.userId))
     }

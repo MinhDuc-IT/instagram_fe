@@ -16,10 +16,11 @@ export const getUsersApi = async (): Promise<User[]> => {
 };
 
 // Posts by user
-export const getUserPostsApi = async (userId: number): Promise<Post[]> => {
-    const res = await axios.get<Post[]>(`/post/user/${userId}`);
-    // interceptor trả về data trực tiếp
-    return res as any; // res đã là Post[]
+export const getUserPostsApi = async (userId: number, page = 1, limit = 10): Promise<any> => {
+    const res = await axios.get(`/post/user/${userId}`, {
+        params: { page, limit }
+    });
+    return res;
 };
 
 // Liked posts
@@ -29,16 +30,19 @@ export const getUserLikedPostsApi = async (userId: number): Promise<Post[]> => {
 };
 
 // Saved posts
-export const getUserSavedPostsApi = async (userId: number): Promise<Post[]> => {
-    // API returns Post[], not ApiResponse<Post[]> according to PostController
-    const res = await axios.get<Post[]>(`/post/user/${userId}/saved`);
-    return res as any;
+export const getUserSavedPostsApi = async (userId: number, page = 1, limit = 10): Promise<any> => {
+    const res = await axios.get(`/post/user/${userId}/saved`, {
+        params: { page, limit }
+    });
+    return res;
 };
 
 // Reels
-export const getUserReelsApi = async (userId: number): Promise<Post[]> => {
-    const res = await axios.get<Post[]>(`/post/user/${userId}/reels`);
-    return res as any;
+export const getUserReelsApi = async (userId: number, page = 1, limit = 10): Promise<any> => {
+    const res = await axios.get(`/post/user/${userId}/reels`, {
+        params: { page, limit }
+    });
+    return res;
 };
 
 // Get user by ID

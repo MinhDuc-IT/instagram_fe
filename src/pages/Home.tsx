@@ -198,11 +198,11 @@ export default function Home() {
         )}
 
         {/* End of posts message */}
-        {!loading && !hasMore && posts.length > 0 && (
+        {/* {!loading && !hasMore && posts.length > 0 && (
           <div className="text-center py-8 text-gray-500 text-sm">
             You're all caught up! 🎉
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Post Modal */}

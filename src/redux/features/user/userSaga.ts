@@ -10,9 +10,6 @@ import {
     fetchUserPostsRequest,
     fetchUserPostsSuccess,
     fetchUserPostsFailure,
-    fetchLikedPostsRequest,
-    fetchLikedPostsSuccess,
-    fetchLikedPostsFailure,
     fetchSavedPostsRequest,
     fetchSavedPostsSuccess,
     fetchSavedPostsFailure,
@@ -39,7 +36,7 @@ import { Post } from "../../../types/post.type";
 import { UserUpdateRequest } from "../../../types/user.type";
 import { setUserAvatar } from "../auth/authSlice";
 // Users
-function* handleFetchUsers() {
+function* handleFetchUsers(): Generator<any, void, any> {
     try {
         const res: User[] = yield call(getUsersApi);
         yield put(fetchUsersSuccess(res));
@@ -48,8 +45,8 @@ function* handleFetchUsers() {
     }
 }
 
-// Profile User (fetch user info + posts)
-function* handleFetchProfileUser(action: ReturnType<typeof fetchProfileUserRequest>) {
+// Profile User
+function* handleFetchProfileUser(action: ReturnType<typeof fetchProfileUserRequest>): Generator<any, void, any> {
     try {
         const userId = action.payload;
 
@@ -61,10 +58,8 @@ function* handleFetchProfileUser(action: ReturnType<typeof fetchProfileUserReque
         }
 
         const user: User = yield call(getUserByIdApi, userId);
-        const posts: Post[] = yield call(getUserPostsApi, userId);
         console.log("Fetched profile user:", user);
-        console.log("Fetched profile posts:", posts);
-        yield put(fetchProfileUserSuccess({ user, posts }));
+        yield put(fetchProfileUserSuccess(user));
     } catch (error: any) {
         console.error("Fetch profile failed:", error);
         yield put(fetchProfileUserFailure(error.response?.data?.message || "Fetch profile failed"));
@@ -72,7 +67,7 @@ function* handleFetchProfileUser(action: ReturnType<typeof fetchProfileUserReque
 }
 
 // updaqte profile
-function* handleUpdateProfile(action: ReturnType<typeof updateProfileRequest>) {
+function* handleUpdateProfile(action: ReturnType<typeof updateProfileRequest>): Generator<any, void, any> {
     try {
         const payload: UserUpdateRequest = action.payload;
 
@@ -90,40 +85,30 @@ function* handleUpdateProfile(action: ReturnType<typeof updateProfileRequest>) {
 }
 
 // Posts
-function* handleFetchUserPosts(action: ReturnType<typeof fetchUserPostsRequest>) {
+function* handleFetchUserPosts(action: ReturnType<typeof fetchUserPostsRequest>): Generator<any, void, any> {
     try {
-        console.log("🔥 handleFetchUserPosts running, payload:", action.payload);
-        const res: Post[] = yield call(getUserPostsApi, action.payload);
-        console.log("Fetched user posts:", res);
+        const { userId, page } = action.payload;
+        const res = yield call(getUserPostsApi, userId, page);
         yield put(fetchUserPostsSuccess(res));
     } catch (error: any) {
-        console.error("Fetch user posts failed:", error);
         yield put(fetchUserPostsFailure(error.response?.data?.message || "Fetch user posts failed"));
     }
 }
 
-function* handleFetchLikedPosts(action: ReturnType<typeof fetchLikedPostsRequest>) {
+function* handleFetchSavedPosts(action: ReturnType<typeof fetchSavedPostsRequest>): Generator<any, void, any> {
     try {
-        const res: Post[] = yield call(getUserLikedPostsApi, action.payload);
-        yield put(fetchLikedPostsSuccess(res));
-    } catch (error: any) {
-        yield put(fetchLikedPostsFailure(error.response?.data?.message || "Fetch liked posts failed"));
-    }
-}
-
-function* handleFetchSavedPosts(action: ReturnType<typeof fetchSavedPostsRequest>) {
-    try {
-        const res: Post[] = yield call(getUserSavedPostsApi, action.payload);
+        const { userId, page } = action.payload;
+        const res = yield call(getUserSavedPostsApi, userId, page);
         yield put(fetchSavedPostsSuccess(res));
     } catch (error: any) {
         yield put(fetchSavedPostsFailure(error.response?.data?.message || "Fetch saved posts failed"));
     }
 }
 
-
-function* handleFetchReels(action: ReturnType<typeof fetchReelsRequest>) {
+function* handleFetchReels(action: ReturnType<typeof fetchReelsRequest>): Generator<any, void, any> {
     try {
-        const res: Post[] = yield call(getUserReelsApi, action.payload);
+        const { userId, page } = action.payload;
+        const res = yield call(getUserReelsApi, userId, page);
         yield put(fetchReelsSuccess(res));
     } catch (error: any) {
         yield put(fetchReelsFailure(error.response?.data?.message || "Fetch reels failed"));
@@ -134,11 +119,7 @@ function* handleFetchReels(action: ReturnType<typeof fetchReelsRequest>) {
 export default function* userSaga() {
     yield takeEvery(fetchUsersRequest.type, handleFetchUsers);
     yield takeEvery(fetchProfileUserRequest.type, handleFetchProfileUser);
-    yield takeEvery(fetchUserPostsRequest, function* (action) {
-        console.log("🔥 Saga received fetchUserPostsRequest:", action);
-        yield call(handleFetchUserPosts, action);
-    });
-    yield takeEvery(fetchLikedPostsRequest.type, handleFetchLikedPosts);
+    yield takeEvery(fetchUserPostsRequest.type, handleFetchUserPosts);
     yield takeEvery(fetchSavedPostsRequest.type, handleFetchSavedPosts);
     yield takeEvery(fetchReelsRequest.type, handleFetchReels);
     yield takeEvery(updateProfileRequest.type, handleUpdateProfile);
