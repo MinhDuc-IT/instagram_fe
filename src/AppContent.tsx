@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { useSelector, useDispatch } from 'react-redux';
-import { useEffect } from 'react';
 import { RootState } from './redux/store';
 import { useNotifications } from './hooks/useNotifications';
 import { fetchConversationsRequest } from './redux/features/message/messageSlice';
