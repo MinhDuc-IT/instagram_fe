@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Settings, MoreHorizontal, Loader } from 'lucide-react';
 
 import { FollowService } from '../service/followService';
@@ -14,6 +15,7 @@ interface ProfileHeaderProps {
 }
 
 export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, onEditProfile }: ProfileHeaderProps) {
+    const navigate = useNavigate();
     const [isFollowing, setIsFollowing] = useState(profileUser?.isFollowing || false);
     const [followersCount, setFollowersCount] = useState(profileUser?.followers ?? 0);
     const [loading, setLoading] = useState(false);
@@ -46,6 +48,12 @@ export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, 
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleMessage = (userId: number) => {
+        // Chỉ navigate đến messages page với userId, không tạo conversation
+        // Conversation sẽ được tạo tự động khi gửi tin nhắn đầu tiên
+        navigate(`/messages?userId=${userId}`);
     };
     return (
         <div className="card p-6 mb-4">
@@ -88,7 +96,9 @@ export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, 
                                         'Follow'
                                     )}
                                 </button>
-                                <button className="btn-secondary">Message</button>
+                                <button onClick={() => handleMessage(profileUser.id)} className="btn-secondary">
+                                    Message
+                                </button>
                                 <button className="btn-secondary">
                                     <MoreHorizontal className="w-5 h-5" />
                                 </button>

@@ -34,6 +34,14 @@ export const getOrCreateConversationApi = (participantId: string): Promise<Axios
     });
 };
 
+// Send a message to a user (automatically creates conversation if not exists)
+export const sendMessageToUserApi = (recipientId: string, content: string): Promise<AxiosResponse<Message>> => {
+    return axios.post<Message>('/messages/send', {
+        recipientId,
+        content,
+    });
+};
+
 // Mark messages as read in a conversation
 export const markMessagesAsReadApi = (
     conversationId: string,

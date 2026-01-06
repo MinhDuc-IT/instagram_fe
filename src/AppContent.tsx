@@ -1,8 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useEffect } from 'react';
 import { RootState } from './redux/store';
 import { useNotifications } from './hooks/useNotifications';
+import { fetchConversationsRequest } from './redux/features/message/messageSlice';
+import { fetchNotificationsRequest } from './redux/features/notification/notificationSlice';
 
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -19,10 +22,21 @@ import ProtectedRoute from './ProtectedRoute';
 import SocialLogin from './pages/SocialLogin';
 
 export default function AppContent() {
+    const dispatch = useDispatch();
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
-    
+
     // Khởi tạo socket connection cho notifications
     useNotifications();
+
+    // Fetch conversations và notifications ngay khi authenticated để hiển thị badge
+    useEffect(() => {
+        if (isAuthenticated) {
+            // Fetch conversations để tính totalUnreadMessages (hiển thị badge Messages)
+            dispatch(fetchConversationsRequest());
+            // Fetch notifications để có unreadCount (hiển thị badge Notifications)
+            dispatch(fetchNotificationsRequest());
+        }
+    }, [isAuthenticated, dispatch]);
 
     return (
         <BrowserRouter>
@@ -39,12 +53,7 @@ export default function AppContent() {
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/code/:userId/:tokenLogin" element={<SocialLogin />} />
 
-                    <Route
-                        path="/home"
-                        element={
-                            <Home />
-                        }
-                    />
+                    <Route path="/home" element={<Home />} />
                     <Route
                         path="/explore"
                         element={

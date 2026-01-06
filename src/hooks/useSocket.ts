@@ -32,17 +32,13 @@ export const useSocket = () => {
         // Lắng nghe tin nhắn mới
         const handleNewMessage = (message: Message) => {
             console.log('New message received:', message);
-            // Chỉ thêm tin nhắn nếu không phải từ người dùng hiện tại (để tránh trùng với sendMessageSuccess)
-            // Hoặc nếu từ người dùng hiện tại nhưng không phải cuộc trò chuyện hiện tại (thiết bị/tab khác)
             const isFromCurrentUser = user?.id && message.senderId === user.id.toString();
             const isCurrentConversation = message.conversationId === selectedConversationId;
 
-            // Thêm tin nhắn nếu:
-            // 1. Không phải từ người dùng hiện tại (người khác gửi)
-            // 2. Hoặc từ người dùng hiện tại nhưng không phải cuộc trò chuyện hiện tại (gửi từ thiết bị/tab khác)
-            if (!isFromCurrentUser || !isCurrentConversation) {
-                dispatch(addNewMessage(message));
-            }
+            // Luôn dispatch addNewMessage để cập nhật lastMessage cho tất cả conversation
+            // addNewMessage sẽ tự kiểm tra và chỉ thêm vào messages nếu là conversation đang mở
+            // và sẽ luôn cập nhật conversation và di chuyển lên đầu
+            dispatch(addNewMessage(message));
 
             // Nếu đang mở cuộc hội thoại này và tin nhắn không phải từ user hiện tại
             // Tự động đánh dấu là đã đọc
