@@ -13,6 +13,7 @@ import { fetchProfileUserRequest } from '../redux/features/user/userSlice';
 import { useSocket } from '../hooks/useSocket';
 import ChatList from '../components/ChatList';
 import MessageBox from '../components/MessageBox';
+import { MessageCircle } from 'lucide-react';
 
 export default function Messages() {
     const dispatch = useDispatch();
@@ -112,37 +113,41 @@ export default function Messages() {
     }));
 
     return (
-        <div className="h-screen flex">
+        <div className="h-[calc(100vh-0px)] flex bg-white dark:bg-black overflow-hidden border-x border-gray-200 dark:border-zinc-800 max-w-[1500px] mx-auto">
             {/* Danh sách cuộc trò chuyện */}
-            <div className="w-full md:w-96 flex-shrink-0">
+            <div className={`w-full md:w-[398px] flex-shrink-0 border-r border-gray-200 dark:border-zinc-800 flex flex-col ${selectedChat ? 'hidden md:flex' : 'flex'}`}>
                 {loading && conversations.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">Đang tải...</div>
                 ) : error ? (
                     <div className="p-4 text-center text-red-500">{error}</div>
-                ) : transformedChats.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">Chưa có cuộc trò chuyện nào</div>
                 ) : (
-                    <ChatList chats={transformedChats} selectedChat={selectedChat} onSelectChat={handleSelectChat} />
+                    <ChatList
+                        chats={transformedChats}
+                        selectedChat={selectedChat}
+                        onSelectChat={handleSelectChat}
+                        currentUser={useSelector((state) => state.auth.user)}
+                    />
                 )}
             </div>
-
             {/* Hộp tin nhắn */}
-            <div className="hidden md:flex flex-1">
-                <MessageBox chat={selectedChat} />
+            <div className={`flex-1 flex flex-col bg-white dark:bg-black ${!selectedChat ? 'hidden md:flex' : 'flex'}`}>
+                {selectedChat ? (
+                    <MessageBox chat={selectedChat} onBack={() => setSelectedChat(null)} />
+                ) : (
+                    <div className="flex-1 flex items-center justify-center p-4">
+                        <div className="text-center max-w-sm">
+                            <div className="w-24 h-24 rounded-full border-2 border-black dark:border-white flex items-center justify-center mx-auto mb-4">
+                                <MessageCircle className="w-12 h-12" />
+                            </div>
+                            <h3 className="text-xl font-normal mb-2">Your Messages</h3>
+                            <p className="text-gray-500 text-sm">Send private photos and messages to a friend or group.</p>
+                            <button className="mt-6 bg-ig-primary text-white px-4 py-1.5 rounded-lg font-semibold text-sm hover:opacity-90 transition">
+                                Send message
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
-
-            {/* Hộp tin nhắn trên mobile */}
-            {selectedChat && (
-                <div className="md:hidden fixed inset-0 bg-white dark:bg-black z-50">
-                    <MessageBox chat={selectedChat} />
-                    <button
-                        onClick={() => setSelectedChat(null)}
-                        className="absolute top-4 left-4 text-ig-primary font-semibold"
-                    >
-                        ← Back
-                    </button>
-                </div>
-            )}
         </div>
     );
 }
