@@ -85,17 +85,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
     };
 
     const handlePost = async () => {
-        // const updatedFiles = mediaFiles.map((m) => ({ ...m, uploading: true }));
-        // setMediaFiles(updatedFiles);
-
-        // const results = await uploadMultiple(mediaFiles);
-        // const finalFiles = mediaFiles.map((media, idx) => ({
-        //     ...media,
-        //     uploadResponse: results[idx],
-        //     uploading: false,
-        // }));
-        // setMediaFiles(finalFiles);
-
         try {
             if (!currentUser) {
                 alert("Please log in to create a post.");
@@ -160,16 +149,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
                     </button>
                 </div>
             )}
-            <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-gray-200 relative">
-                <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800 relative">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-gray-800">
                     <button
                         onClick={step !== 'select' ? handleBack : handleClose}
-                        className="text-gray-700 hover:text-gray-900 w-6"
+                        className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white w-6"
                     >
                         {step !== 'select' ? <ChevronLeft size={22} /> : <X size={22} />}
                     </button>
 
-                    <h2 className="font-semibold text-base text-gray-800">
+                    <h2 className="font-semibold text-base text-gray-800 dark:text-gray-100">
                         {step === 'select' && 'Create new post'}
                         {step === 'edit' && 'Edit'}
                         {step === 'caption' && 'Create new post'}

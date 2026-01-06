@@ -34,7 +34,7 @@ import {
     updateProfile,
 } from "../../../service/userService";
 
-import { User } from "./userSlice";
+import { User } from "../../../types/user.type";
 import { Post } from "../../../types/post.type";
 import { UserUpdateRequest } from "../../../types/user.type";
 import { setUserAvatar } from "../auth/authSlice";

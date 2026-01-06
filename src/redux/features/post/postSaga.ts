@@ -10,8 +10,14 @@ import {
   fetchMorePosts,
   fetchMorePostsSuccess,
   fetchMorePostsFailure,
+  createPostRequest,
+  createPostSuccess,
+  createPostFailure,
 } from "./postSlice"
 import { RootState } from "../../store"
+import { PayloadAction } from "@reduxjs/toolkit"
+
+
 
 // Initial fetch saga
 function* fetchHomeFeedSaga(): SagaIterator {
@@ -50,11 +56,11 @@ function* fetchMorePostsSaga(): SagaIterator {
 
     yield put(
       fetchMorePostsSuccess({
-        posts: postsRes.data.posts,
+        posts: postsRes.posts,
         pagination: {
-          currentPage: postsRes.data.currentPage,
-          totalPages: postsRes.data.totalPages,
-          hasMore: postsRes.data.hasMore,
+          currentPage: postsRes.pagination.currentPage,
+          totalPages: postsRes.pagination.totalPages,
+          hasMore: postsRes.pagination.hasMore,
         },
       })
     )
@@ -63,7 +69,39 @@ function* fetchMorePostsSaga(): SagaIterator {
   }
 }
 
+// Create Post Saga
+function* createPostSaga(action: PayloadAction<{ caption: string; image: File; location?: string; visibility: string; isLikesHidden: boolean; isCommentsDisabled: boolean }>): SagaIterator {
+  try {
+    const { caption, image, location, visibility, isLikesHidden, isCommentsDisabled } = action.payload;
+    console.log(action.payload);
+    const state: RootState = yield select();
+    const token = state.auth.accessToken;
+
+    const mediaFiles = [{ file: image, type: 'image' }];
+
+    const res = yield call(
+      PostService.uploadPost,
+      token,
+      caption,
+      location || '',
+      'public',
+      false,
+      false,
+      mediaFiles as any
+    );
+
+    yield put(createPostSuccess(res.data));
+
+    yield put(fetchHomeFeed());
+
+  } catch (err: any) {
+    console.error("Create post failed", err);
+    yield put(createPostFailure(err.message || "Failed to create post"));
+  }
+}
+
 export default function* postSaga() {
   yield takeLatest(fetchHomeFeed.type, fetchHomeFeedSaga)
   yield takeLatest(fetchMorePosts.type, fetchMorePostsSaga)
+  yield takeLatest(createPostRequest.type, createPostSaga)
 }

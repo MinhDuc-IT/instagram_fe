@@ -1,10 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Settings, MoreHorizontal, Loader } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { toggleFollowInPost } from '../redux/features/post/postSlice';
+import { toggleFollow } from '../redux/features/user/userSlice';
 
 import { FollowService } from '../service/followService';
 import { User as AuthUser } from '../redux/features/auth/authSlice';
-import { User as ProfileUser } from '../redux/features/user/userSlice';
+import { User as ProfileUser } from '../types/user.type';
 
 interface ProfileHeaderProps {
     profileUser: ProfileUser | null;
@@ -14,6 +17,7 @@ interface ProfileHeaderProps {
 }
 
 export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, onEditProfile }: ProfileHeaderProps) {
+    const dispatch = useDispatch();
     const [isFollowing, setIsFollowing] = useState(profileUser?.isFollowing || false);
     const [followersCount, setFollowersCount] = useState(profileUser?.followers ?? 0);
     const [loading, setLoading] = useState(false);
@@ -33,22 +37,34 @@ export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, 
         const prevFollowing = isFollowing;
         const prevFollowers = followersCount;
 
+        // Optimistic update - local state
         setIsFollowing(nextFollowing);
         setFollowersCount((c) => Math.max(0, c + (nextFollowing ? 1 : -1)));
+
+        // Optimistic update - Redux state
+        // Update posts in home feed
+        dispatch(toggleFollowInPost(userId));
+        // Update user in users list (for profile)
+        dispatch(toggleFollow(userId));
+
         try {
             setLoading(true);
             await FollowService.followUser(userId);
             console.log(`${nextFollowing ? 'Followed' : 'Unfollowed'} user with ID:`, userId);
         } catch (error) {
             console.error('Failed to follow user:', error);
+            // Rollback local state
             setIsFollowing(prevFollowing);
             setFollowersCount(prevFollowers);
+            // Rollback Redux state
+            dispatch(toggleFollowInPost(userId));
+            dispatch(toggleFollow(userId));
         } finally {
             setLoading(false);
         }
     };
     return (
-        <div className="card p-6 mb-4">
+        <div className="px-4 md:px-12 py-8 max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Avatar */}
                 <div className="flex justify-center md:justify-start">
@@ -61,37 +77,42 @@ export default function ProfileHeader({ profileUser, currentUser, isOwnProfile, 
 
                 {/* Info */}
                 <div className="flex-1 space-y-4">
-                    <div className="flex flex-col md:flex-row items-center gap-4">
-                        <h1 className="text-2xl font-light">{profileUser.username}</h1>
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                        <h1 className="text-xl md:text-2xl font-normal">{profileUser.username}</h1>
 
                         {isOwnProfile ? (
                             <div className="flex gap-2">
-                                <button onClick={onEditProfile} className="btn-secondary">
+                                <button onClick={onEditProfile} className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors">
                                     Edit profile
                                 </button>
-                                <button className="btn-secondary">
+                                {/* <button className="btn-secondary">
                                     <Settings className="w-5 h-5" />
-                                </button>
+                                </button> */}
                             </div>
                         ) : (
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleFollow(profileUser.id)}
-                                    className="btn-primary min-w-[110px] flex items-center justify-center"
+                                    className={`${isFollowing
+                                        ? 'bg-gray-100 hover:bg-gray-200 text-black dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white'
+                                        : 'bg-blue-500 hover:bg-blue-600 text-white'} 
+                                        px-6 py-1.5 rounded-lg text-sm font-semibold transition-colors min-w-[100px] flex items-center justify-center`}
                                     disabled={loading}
                                 >
                                     {loading ? (
-                                        <Loader className="animate-spin w-5 h-5" />
+                                        <Loader className="animate-spin w-4 h-4" />
                                     ) : isFollowing ? (
                                         'Following'
                                     ) : (
                                         'Follow'
                                     )}
                                 </button>
-                                <button className="btn-secondary">Message</button>
-                                <button className="btn-secondary">
-                                    <MoreHorizontal className="w-5 h-5" />
+                                <button className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-black dark:text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors">
+                                    Message
                                 </button>
+                                {/* <button className="btn-secondary">
+                                    <MoreHorizontal className="w-5 h-5" />
+                                </button> */}
                             </div>
                         )}
                     </div>

@@ -1,11 +1,13 @@
 export interface User {
-    id: number;
-    username: string;
-    email?: string;
-    avatar?: string;
-    followers?: number;
-    isFollowing?: boolean;
-    [key: string]: any;
+  id: number;
+  username: string;
+  email?: string;
+  phone?: string;
+  gender?: number;
+  avatar?: string;
+  followers?: number;
+  isFollowing?: boolean;
+  [key: string]: any;
 }
 
 export interface UserUpdateRequest {
