@@ -61,7 +61,7 @@ export default function ReelCard({
     return (
         <div
             onWheel={handleWheel}
-            className="relative h-screen w-full snap-start snap-always flex items-center justify-center bg-white"
+            className="relative h-screen w-full snap-start snap-always flex items-center justify-center bg-white dark:bg-black"
         >
             <div className="relative w-full max-w-[420px] h-[calc(100vh-2rem)] flex items-center justify-center mx-auto rounded-lg">
                 <video
@@ -112,10 +112,10 @@ export default function ReelCard({
                     <div className="absolute bottom-12 right-[-60px] flex flex-col gap-6">
                         <button onClick={() => handleLike(reel)} className="flex flex-col items-center">
                             <Heart
-                                className={`w-7 h-7 ${isLiked ? 'text-[#fc323e]' : 'text-black'}`}
+                                className={`w-7 h-7 ${isLiked ? 'text-[#fc323e]' : 'text-black dark:text-white'}`}
                                 fill={isLiked ? '#fc323e' : 'none'}
                             />
-                            <span className="text-black text-xs mt-1">
+                            <span className="text-black dark:text-white text-xs mt-1">
                                 {DataUtil.formatlikeCount(reel?.likesCount || 0)}
                             </span>
                         </button>
@@ -128,12 +128,12 @@ export default function ReelCard({
                             handleClickComment={handleClickComment}
                         />
                         <button className="flex flex-col items-center">
-                            <Send className="w-7 h-7 text-black" />
+                            <Send className="w-7 h-7 text-black dark:text-white" />
                         </button>
                         <button onClick={() => handleSave()} className="flex flex-col items-center">
-                            <Bookmark className="w-7 h-7 text-black" fill={isSaved ? 'black' : 'none'} />
+                            <Bookmark className="w-7 h-7 text-black dark:text-white" fill={isSaved ? 'black' : 'none'} />
                         </button>
-                        <button className="text-black p-2">
+                        <button className="text-black dark:text-white p-2">
                             <MoreHorizontal className="w-6 h-6" />
                         </button>
                     </div>

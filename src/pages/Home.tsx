@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { fetchHomeFeed, fetchMorePosts } from "../redux/features/post/postSlice"
-import { fetchStories, fetchMoreStories } from "../redux/features/story/storySlice"
+import { fetchStories, fetchMoreStories, createStoryRequest, shareStoryRequest } from "../redux/features/story/storySlice"
 import PostCard from "../components/PostCard"
 import PostModal from "../components/PostModal"
 import StoryBubble from "../components/story/StoryBubble"
@@ -11,6 +11,8 @@ import StorySkeleton from "../components/story/StorySkeleton"
 import EmptyStories from "../components/story/EmptyStories"
 import AddStoryBubble from "../components/story/AddStoryBubble"
 import AddStoryModal from "../components/story/AddStoryModal"
+import StoryViewerModal from "../components/story/StoryViewerModal"
+import { UserStoryGroup } from "../types/story.type"
 
 export default function Home() {
   const dispatch = useDispatch()
@@ -24,17 +26,19 @@ export default function Home() {
   } = useSelector((state: RootState) => state.post)
 
   const {
-    stories,
+    stories: storyGroups,
     loading: storyLoading,
     loadingMore: storyLoadingMore,
     hasMore: hasMoreStories,
   } = useSelector((state: RootState) => state.story)
 
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const [viewingGroup, setViewingGroup] = useState<UserStoryGroup | null>(null)
   const observerTarget = useRef<HTMLDivElement>(null)
   const isFetchingRef = useRef(false)
   const storyObserverRef = useRef<HTMLDivElement>(null)
   const [showAddStory, setShowAddStory] = useState(false)
+  const [storySharedPost, setStorySharedPost] = useState<Post | null>(null)
 
   useEffect(() => {
     dispatch(fetchStories())
@@ -99,9 +103,11 @@ export default function Home() {
     }
   }, [currentPage])
 
-  function createStoryRequest(form: FormData): any {
-    throw new Error("Function not implemented.")
-  }
+  const handleShareToStory = useCallback((post: Post) => {
+    setStorySharedPost(post)
+    setShowAddStory(true)
+    setSelectedPost(null) // Close post modal if open, optional
+  }, [])
 
   return (
     <div className="max-w-2xl mx-auto py-4 px-4">
@@ -111,17 +117,24 @@ export default function Home() {
         <div className="flex gap-4">
 
           {/* ADD STORY */}
-          <AddStoryBubble onClick={() => setShowAddStory(true)} />
+          <AddStoryBubble onClick={() => {
+            setStorySharedPost(null)
+            setShowAddStory(true)
+          }} />
 
           {/* LOADING */}
-          {storyLoading && stories.length === 0 && <StorySkeleton />}
+          {storyLoading && storyGroups.length === 0 && <StorySkeleton />}
 
           {/* EMPTY */}
-          {!storyLoading && stories.length === 0 && <EmptyStories />}
+          {!storyLoading && storyGroups.length === 0 && <EmptyStories />}
 
           {/* STORIES */}
-          {stories.map(story => (
-            <StoryBubble key={story.id} user={story.user} />
+          {storyGroups.map(group => (
+            <StoryBubble
+              key={group.user.id}
+              group={group}
+              onClick={() => setViewingGroup(group)}
+            />
           ))}
 
           {/* PAGING TRIGGER */}
@@ -197,17 +210,35 @@ export default function Home() {
         <PostModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
+          onShareToStory={handleShareToStory}
+        />
+      )}
+
+      {/* Story Viewer Modal */}
+      {viewingGroup && (
+        <StoryViewerModal
+          group={viewingGroup}
+          onClose={() => setViewingGroup(null)}
         />
       )}
 
       {showAddStory && (
         <AddStoryModal
-          onClose={() => setShowAddStory(false)}
-          onSubmit={file => {
-            const form = new FormData()
-            form.append("file", file)
-            dispatch(createStoryRequest(form))
+          sharedPost={storySharedPost}
+          onClose={() => {
             setShowAddStory(false)
+            setStorySharedPost(null)
+          }}
+          onSubmit={(file, postId) => {
+            if (postId) {
+              dispatch(shareStoryRequest(postId))
+            } else if (file) {
+              const form = new FormData()
+              form.append("files", file)
+              dispatch(createStoryRequest(form))
+            }
+            setShowAddStory(false)
+            setStorySharedPost(null)
           }}
         />
       )}

@@ -8,8 +8,8 @@ interface GetHomePostsParams {
 }
 
 interface PostsResponse {
-    data: {
-        posts: Post[]
+    posts: Post[]
+    pagination: {
         currentPage: number
         totalPages: number
         totalPosts: number
@@ -112,6 +112,6 @@ export const PostService = {
         const response = await axios.get("/post/home", {
             params: { page, limit },
         })
-        return response
+        return response as any as PostsResponse
     },
 };

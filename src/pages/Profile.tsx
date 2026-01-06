@@ -4,7 +4,7 @@ import { Grid, Bookmark, Film, X, Loader, Heart, MessageCircle } from "lucide-re
 import { useSelector, useDispatch } from "react-redux";
 import ProfileHeader from "../components/ProfileHeader";
 import { RootState, AppDispatch } from "../redux/store";
-import { fetchProfileUserRequest, fetchSavedPostsRequest } from "../redux/features/user/userSlice";
+import { fetchProfileUserRequest, fetchSavedPostsRequest, fetchReelsRequest } from "../redux/features/user/userSlice";
 import { Post } from "../types/post.type";
 import PostModal from "../components/PostModal";
 import EditProfileModal from "../components/EditProfileModal";
@@ -14,15 +14,11 @@ export default function Profile() {
   const dispatch = useDispatch<AppDispatch>();
 
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
-  const { profileUser, userPosts, savedPosts, loading } = useSelector((state: RootState) => state.users);
+  const { profileUser, userPosts, savedPosts, userReels, loading } = useSelector((state: RootState) => state.users);
 
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "reels">("posts");
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-
-  // const [editForm, setEditForm] = useState({
-  //   fullName: currentUser?.fullName || "",
-  // });
 
   // Fetch profile user when userId changes
   useEffect(() => {
@@ -30,14 +26,24 @@ export default function Profile() {
       const id = parseInt(userId);
       console.log("🔥 Fetching profile for userId:", id);
       dispatch(fetchProfileUserRequest(id));
+      setActiveTab("posts"); // Reset tab
     }
   }, [userId]);
 
-  // useEffect(() => {
-  //   if (currentUser) {
-  //     setEditForm({ fullName: currentUser.fullName || "" });
-  //   }
-  // }, [currentUser]);
+  // Fetch data when tab changes
+  useEffect(() => {
+    if (!userId) return;
+    const id = parseInt(userId);
+
+    if (activeTab === "saved" && isOwnProfile) {
+      dispatch(fetchSavedPostsRequest(id));
+    } else if (activeTab === "reels") {
+      dispatch(fetchReelsRequest(id));
+    } else if (activeTab === "posts") {
+      // usually fetched with profile user, but good to refresh?
+      // dispatch(fetchUserPostsRequest(id));
+    }
+  }, [activeTab, userId]);
 
   if (!currentUser || !profileUser) {
     return (
@@ -48,18 +54,6 @@ export default function Profile() {
   }
 
   const isOwnProfile = userId === currentUser.id.toString();
-
-  // Filter saved posts (only for own profile)
-  // console.log("Filtering saved posts for own profile:", isOwnProfile);
-  // console.log("User posts:", userPosts);
-  const filteredSavedPosts = isOwnProfile ? userPosts.filter((post: Post) => post.isSaved) : [];
-
-  // const handleEditSubmit = (e: FormEvent) => {
-  //   e.preventDefault();
-  //   console.log("Submitting edit profile with:", editForm);
-  //   dispatch(updateProfileRequest({ fullName: editForm.fullName }));
-  //   setShowEditModal(false);
-  // };
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -159,16 +153,16 @@ export default function Profile() {
           ))}
 
         {activeTab === "saved" &&
-          filteredSavedPosts.map((post) => (
+          savedPosts.map((post) => (
             <div
               key={post.id}
-              className="aspect-square relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 group"
+              className="aspect-square relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 group cursor-pointer"
               onClick={() => setSelectedPost(post)}
             >
               <img
                 src={post.media[0]?.url || "/placeholder.svg"}
                 alt="Saved Post"
-                className="w-full h-full object-cover cursor-pointer hover:opacity-75 transition-opacity"
+                className="w-full h-full object-cover transition-opacity"
               />
 
               {/* Hover overlay */}
@@ -186,14 +180,34 @@ export default function Profile() {
           ))}
 
         {activeTab === "reels" && (
-          <div className="col-span-3 text-center py-12 text-gray-500">No reels yet</div>
+          userReels.length > 0 ? (
+            userReels.map((post) => (
+              <div
+                key={post.id}
+                className="aspect-[9/16] relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 group cursor-pointer"
+                onClick={() => setSelectedPost(post)}
+              >
+                <video
+                  src={post.media[0]?.url || "/placeholder.svg"}
+                  className="w-full h-full object-cover"
+                  muted
+                />
+                <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white shadow-sm">
+                  <Heart size={16} fill="white" />
+                  <span className="text-xs font-semibold">{post.likes}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-12 text-gray-500">No reels yet</div>
+          )
         )}
       </div>
 
       {/* Edit Profile Modal */}
       {showEditModal && (
         <EditProfileModal
-          user={currentUser}
+          user={profileUser as any}
           onClose={() => setShowEditModal(false)}
         />
       )}
