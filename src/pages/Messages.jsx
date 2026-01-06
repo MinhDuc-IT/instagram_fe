@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -21,6 +21,56 @@ export default function Messages() {
     const { conversations, loading, error } = useSelector((state) => state.message);
     const { profileUser } = useSelector((state) => state.users);
     const [selectedChat, setSelectedChat] = useState(null);
+
+    // Resizing logic
+    const [sidebarWidth, setSidebarWidth] = useState(() => {
+        const savedWidth = localStorage.getItem('chatSidebarWidth');
+        return savedWidth ? parseInt(savedWidth, 10) : 398;
+    });
+    const isResizing = useRef(false);
+
+    const startResizing = useCallback((e) => {
+        isResizing.current = true;
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', stopResizing);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        isResizing.current = false;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', stopResizing);
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = 'auto';
+    }, []);
+
+    const handleMouseMove = useCallback((e) => {
+        if (!isResizing.current) return;
+
+        // Calculate the new width based on mouse position relative to the container
+        // We use a simpler approach since the container is max-width and centered
+        // We can get the offset of the container to be more precise
+        const container = document.getElementById('messages-container');
+        if (!container) return;
+
+        const containerRect = container.getBoundingClientRect();
+        let newWidth = e.clientX - containerRect.left;
+
+        // Constraints
+        if (newWidth < 250) newWidth = 250;
+        if (newWidth > 600) newWidth = 600;
+
+        setSidebarWidth(newWidth);
+        localStorage.setItem('chatSidebarWidth', newWidth.toString());
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', stopResizing);
+        };
+    }, [handleMouseMove, stopResizing]);
 
     // Khởi tạo kết nối socket
     useSocket();
@@ -113,9 +163,12 @@ export default function Messages() {
     }));
 
     return (
-        <div className="h-[calc(100vh-0px)] flex bg-white dark:bg-black overflow-hidden border-x border-gray-200 dark:border-zinc-800 max-w-[1500px] mx-auto">
+        <div id="messages-container" className="h-[calc(100vh-0px)] flex bg-white dark:bg-black overflow-hidden border-x border-gray-200 dark:border-zinc-800 max-w-[1500px] mx-auto">
             {/* Danh sách cuộc trò chuyện */}
-            <div className={`w-full md:w-[398px] flex-shrink-0 border-r border-gray-200 dark:border-zinc-800 flex flex-col ${selectedChat ? 'hidden md:flex' : 'flex'}`}>
+            <div
+                className={`flex-shrink-0 flex flex-col ${selectedChat ? 'hidden md:flex' : 'flex'}`}
+                style={{ width: window.innerWidth >= 768 ? `${sidebarWidth}px` : '100%' }}
+            >
                 {loading && conversations.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">Đang tải...</div>
                 ) : error ? (
@@ -129,6 +182,15 @@ export default function Messages() {
                     />
                 )}
             </div>
+
+            {/* Resize Divider */}
+            <div
+                onMouseDown={startResizing}
+                className="hidden md:block w-1 hover:w-1.5 cursor-col-resize bg-transparent hover:bg-ig-primary/30 transition-all duration-200 relative z-10"
+            >
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1px] bg-gray-200 dark:border-zinc-800" />
+            </div>
+
             {/* Hộp tin nhắn */}
             <div className={`flex-1 flex flex-col bg-white dark:bg-black ${!selectedChat ? 'hidden md:flex' : 'flex'}`}>
                 {selectedChat ? (
