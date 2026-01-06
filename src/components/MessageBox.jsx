@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Send, Heart, MessageCircle } from 'lucide-react';
 import { fetchMessagesRequest, sendMessageRequest, clearAllTypingUsers } from '../redux/features/message/messageSlice';
 import { getSocket } from '../utils/socket';
+import EmojiPicker from './Common/EmojiPicker';
 
 export default function MessageBox({ chat }) {
     const dispatch = useDispatch();
@@ -275,11 +276,10 @@ export default function MessageBox({ chat }) {
                             className={`flex ${isCurrentUser(msg.senderId) ? 'justify-end' : 'justify-start'}`}
                         >
                             <div
-                                className={`max-w-xs px-4 py-2 rounded-2xl break-words ${
-                                    isCurrentUser(msg.senderId)
-                                        ? 'bg-ig-primary text-white'
-                                        : 'bg-gray-200 dark:bg-gray-800'
-                                }`}
+                                className={`max-w-xs px-4 py-2 rounded-2xl break-words ${isCurrentUser(msg.senderId)
+                                    ? 'bg-ig-primary text-white'
+                                    : 'bg-gray-200 dark:bg-gray-800'
+                                    }`}
                             >
                                 <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                                 <p
@@ -318,7 +318,12 @@ export default function MessageBox({ chat }) {
 
             {/* Ô nhập */}
             <form onSubmit={handleSend} className="p-4 border-t border-gray-200 dark:border-gray-800">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 relative">
+                    <EmojiPicker
+                        onEmojiSelect={(emoji) => setMessage(message + emoji)}
+                        placement="top-start"
+                        className="p-2"
+                    />
                     <input
                         type="text"
                         placeholder="Message..."

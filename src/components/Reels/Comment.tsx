@@ -9,6 +9,7 @@ import { usePostComments } from '../../hooks/usePostComments';
 import { createCommentRequest, getCommentsRequest, updateLikeComment } from '../../redux/features/comment/commentSlice';
 import CommentItem from '../Comment/CommentItem';
 import { COMMENTS_PAGE_SIZE } from '../../constants/filters';
+import EmojiPicker from '../Common/EmojiPicker';
 
 type CommentProps = {
     reel: any;
@@ -74,10 +75,10 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
             const commentsAfterLike = comments.map((c: any) =>
                 c.id === commentId
                     ? {
-                          ...c,
-                          isLiked: !c.isLiked,
-                          likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
-                      }
+                        ...c,
+                        isLiked: !c.isLiked,
+                        likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
+                    }
                     : c,
             );
             dispatch(updateLikeComment({ comments: commentsAfterLike }));
@@ -239,9 +240,10 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
                                         onChange={(e) => setCommentText(e.target.value)}
                                         className="flex-1 bg-transparent outline-none text-sm"
                                     />
-                                    <button className="p-1">
-                                        <Smile className="w-5 h-5 text-gray-500" />
-                                    </button>
+                                    <EmojiPicker
+                                        onEmojiSelect={(emoji) => setCommentText(commentText + emoji)}
+                                        placement="top-end"
+                                    />
                                 </div>
                                 {commentText && (
                                     <button

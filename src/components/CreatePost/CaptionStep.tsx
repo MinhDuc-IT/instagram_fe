@@ -4,6 +4,7 @@ import MediaPreview from './MediaPreview';
 import { MediaFile } from '../../types/media.types';
 import { RootState, AppDispatch } from "../../redux/store";
 import { useSelector } from 'react-redux';
+import EmojiPicker from '../Common/EmojiPicker';
 
 interface CaptionStepProps {
     currentMedia: MediaFile;
@@ -66,9 +67,10 @@ const CaptionStep: React.FC<CaptionStepProps> = ({
                         {caption.length}/2,200
                     </div>
 
-                    <button className="text-gray-400 hover:text-gray-600 mt-2">
-                        <Smile size={20} />
-                    </button>
+                    <EmojiPicker
+                        onEmojiSelect={(emoji) => onCaptionChange(caption + emoji)}
+                        className="mt-2"
+                    />
 
                     <div className="mt-4 pt-4 border-t">
                         <div className="flex items-center gap-2">
