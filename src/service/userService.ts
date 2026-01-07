@@ -1,7 +1,7 @@
-import axios from "../utils/axiosCustomize";
-import { Post } from "../types/post.type";
-import { User, UserUpdateRequest } from "../types/user.type";
-import { AxiosResponse } from "axios";
+import axios from '../utils/axiosCustomize';
+import { Post } from '../types/post.type';
+import { User, UserUpdateRequest } from '../types/user.type';
+import { AxiosResponse } from 'axios';
 
 export interface ApiResponse<T> {
     statusCode: number;
@@ -11,14 +11,14 @@ export interface ApiResponse<T> {
 
 // Users list
 export const getUsersApi = async (): Promise<User[]> => {
-    const res = await axios.get<ApiResponse<User[]>>("/users");
+    const res = await axios.get<ApiResponse<User[]>>('/users');
     return res.data.data;
 };
 
 // Posts by user
 export const getUserPostsApi = async (userId: number, page = 1, limit = 10): Promise<any> => {
     const res = await axios.get(`/post/user/${userId}`, {
-        params: { page, limit }
+        params: { page, limit },
     });
     return res;
 };
@@ -32,7 +32,7 @@ export const getUserLikedPostsApi = async (userId: number): Promise<Post[]> => {
 // Saved posts
 export const getUserSavedPostsApi = async (userId: number, page = 1, limit = 10): Promise<any> => {
     const res = await axios.get(`/post/user/${userId}/saved`, {
-        params: { page, limit }
+        params: { page, limit },
     });
     return res;
 };
@@ -40,7 +40,7 @@ export const getUserSavedPostsApi = async (userId: number, page = 1, limit = 10)
 // Reels
 export const getUserReelsApi = async (userId: number, page = 1, limit = 10): Promise<any> => {
     const res = await axios.get(`/post/user/${userId}/reels`, {
-        params: { page, limit }
+        params: { page, limit },
     });
     return res;
 };
@@ -49,7 +49,7 @@ export const getUserReelsApi = async (userId: number, page = 1, limit = 10): Pro
 export const getUserByIdApi = async (userId: number): Promise<User> => {
     const res = await axios.get<any>(`/users/${userId}`);
     const data = res.data || res;
-    console.log("API response for getUserByIdApi:", data);
+    console.log('API response for getUserByIdApi:', data);
 
     // Map backend response to User interface
     return {
@@ -71,7 +71,16 @@ export const getUserByIdApi = async (userId: number): Promise<User> => {
 
 // Update user profile
 export const updateProfile = (payload: UserUpdateRequest): Promise<AxiosResponse<User>> => {
-    const res = axios.patch("/users/me", payload);
-    console.log("API response for updateProfile:", res);
+    const res = axios.patch('/users/me', payload);
+    console.log('API response for updateProfile:', res);
     return res;
-}
+};
+
+// Search users
+export const searchUsersApi = async (query: string, limit: number = 20): Promise<User[]> => {
+    const res = await axios.get('/users/search', {
+        params: { q: query, limit },
+    });
+    // axiosCustomize đã unwrap response.data, nên res đã là data trực tiếp
+    return Array.isArray(res) ? res : [];
+};

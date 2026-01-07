@@ -44,6 +44,8 @@ export interface UsersState {
     loading: boolean;
     postsLoading: boolean;
     error: string | null;
+    searchResults: User[];
+    searchLoading: boolean;
 }
 
 const initialState: UsersState = {
@@ -62,6 +64,8 @@ const initialState: UsersState = {
     loading: false,
     postsLoading: false,
     error: null,
+    searchResults: [],
+    searchLoading: false,
 };
 
 export const userSlice = createSlice({
@@ -114,16 +118,16 @@ export const userSlice = createSlice({
         },
 
         // Posts (UserPosts)
-        fetchUserPostsRequest: (state, _action: PayloadAction<{ userId: number, page: number }>) => {
+        fetchUserPostsRequest: (state, _action: PayloadAction<{ userId: number; page: number }>) => {
             state.postsLoading = true;
             state.error = null;
         },
-        fetchUserPostsSuccess: (state, action: PayloadAction<{ posts: Post[], pagination: any }>) => {
+        fetchUserPostsSuccess: (state, action: PayloadAction<{ posts: Post[]; pagination: any }>) => {
             if (action.payload.pagination.currentPage === 1) {
                 state.userPosts = action.payload.posts;
             } else {
-                const existingIds = new Set(state.userPosts.map(p => p.id));
-                const newPosts = action.payload.posts.filter(p => !existingIds.has(p.id));
+                const existingIds = new Set(state.userPosts.map((p) => p.id));
+                const newPosts = action.payload.posts.filter((p) => !existingIds.has(p.id));
                 state.userPosts.push(...newPosts);
             }
             state.userPostsPage = action.payload.pagination.currentPage;
@@ -136,16 +140,16 @@ export const userSlice = createSlice({
         },
 
         // Saved Posts
-        fetchSavedPostsRequest: (state, _action: PayloadAction<{ userId: number, page: number }>) => {
+        fetchSavedPostsRequest: (state, _action: PayloadAction<{ userId: number; page: number }>) => {
             state.postsLoading = true;
             state.error = null;
         },
-        fetchSavedPostsSuccess: (state, action: PayloadAction<{ posts: Post[], pagination: any }>) => {
+        fetchSavedPostsSuccess: (state, action: PayloadAction<{ posts: Post[]; pagination: any }>) => {
             if (action.payload.pagination.currentPage === 1) {
                 state.savedPosts = action.payload.posts;
             } else {
-                const existingIds = new Set(state.savedPosts.map(p => p.id));
-                const newPosts = action.payload.posts.filter(p => !existingIds.has(p.id));
+                const existingIds = new Set(state.savedPosts.map((p) => p.id));
+                const newPosts = action.payload.posts.filter((p) => !existingIds.has(p.id));
                 state.savedPosts.push(...newPosts);
             }
             state.savedPostsPage = action.payload.pagination.currentPage;
@@ -158,16 +162,16 @@ export const userSlice = createSlice({
         },
 
         // Reels
-        fetchReelsRequest: (state, _action: PayloadAction<{ userId: number, page: number }>) => {
+        fetchReelsRequest: (state, _action: PayloadAction<{ userId: number; page: number }>) => {
             state.postsLoading = true;
             state.error = null;
         },
-        fetchReelsSuccess: (state, action: PayloadAction<{ posts: Post[], pagination: any }>) => {
+        fetchReelsSuccess: (state, action: PayloadAction<{ posts: Post[]; pagination: any }>) => {
             if (action.payload.pagination.currentPage === 1) {
                 state.userReels = action.payload.posts;
             } else {
-                const existingIds = new Set(state.userReels.map(p => p.id));
-                const newPosts = action.payload.posts.filter(p => !existingIds.has(p.id));
+                const existingIds = new Set(state.userReels.map((p) => p.id));
+                const newPosts = action.payload.posts.filter((p) => !existingIds.has(p.id));
                 state.userReels.push(...newPosts);
             }
             state.userReelsPage = action.payload.pagination.currentPage;
@@ -213,10 +217,10 @@ export const userSlice = createSlice({
             state.users = state.users.map((user) =>
                 user.id === userId
                     ? {
-                        ...user,
-                        isFollowing: !user.isFollowing,
-                        followers: user.isFollowing ? (user.followers ?? 0) - 1 : (user.followers ?? 0) + 1,
-                    }
+                          ...user,
+                          isFollowing: !user.isFollowing,
+                          followers: user.isFollowing ? (user.followers ?? 0) - 1 : (user.followers ?? 0) + 1,
+                      }
                     : user,
             );
 
@@ -259,6 +263,21 @@ export const userSlice = createSlice({
                 return { ...p, comments: [...(p.comments || []), comment] } as Post;
             });
         },
+
+        // Search users
+        searchUsersRequest: (state, _action: PayloadAction<{ query: string; limit?: number }>) => {
+            state.searchLoading = true;
+            state.error = null;
+        },
+        searchUsersSuccess: (state, action: PayloadAction<User[]>) => {
+            state.searchResults = action.payload;
+            state.searchLoading = false;
+        },
+        searchUsersFailure: (state, action: PayloadAction<string>) => {
+            state.searchLoading = false;
+            state.error = action.payload;
+            state.searchResults = [];
+        },
     },
 });
 
@@ -287,6 +306,9 @@ export const {
     updateProfileRequest,
     updateProfileSuccess,
     updateProfileFailure,
+    searchUsersRequest,
+    searchUsersSuccess,
+    searchUsersFailure,
 } = userSlice.actions;
 
 export default userSlice.reducer;
