@@ -136,9 +136,9 @@ export default function Explore() {
             )}
 
             {/* End of posts message */}
-            {!loading && !hasMore && posts.length > 0 && (
+            {/* {!loading && !hasMore && posts.length > 0 && (
                 <div className="text-center py-8 text-gray-500 text-sm">You've reached the end! 🎉</div>
-            )}
+            )} */}
 
             {/* Post Modal */}
             {selectedPost && <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />}
