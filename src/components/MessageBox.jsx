@@ -289,7 +289,7 @@ export default function MessageBox({ chat, onBack }) {
                                             : 'bg-gray-100 dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
                                         }`}
                                 >
-                                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                                    <p className="whitespace-pre-wrap break-words break-all">{msg.content}</p>
                                 </div>
                                 {isLastInGroup && (
                                     <span className={`text-[10px] text-gray-500 mt-1 ${fromMe ? 'text-right' : 'text-left'}`}>

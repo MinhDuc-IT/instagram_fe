@@ -22,11 +22,19 @@ export default function ReelCard({
     const [isSaved, setIsSaved] = useState(reel.isSaved);
     const [showComments, setShowComments] = useState(false);
     const avatarUrl = useSelector((state: RootState) => state?.auth?.user?.avatar);
+    const [showFullCaption, setShowFullCaption] = useState(false)
+
+    const captionLimit = 100
+    const needsTruncate = (reel.caption?.length ?? 0) > captionLimit
 
     useEffect(() => {
         setShowComments(false);
     }, [reel.id]);
 
+    const toggleCaption = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        setShowFullCaption(!showFullCaption)
+    }
     const handleLike = async (reel: any) => {
         await PostService.like(reel.id);
         reel.likesCount = isLiked ? reel.likesCount - 1 : reel.likesCount + 1;
@@ -105,7 +113,28 @@ export default function ReelCard({
                                 Follow
                             </button>
                         </div>
-                        <p className="text-white text-sm">{reel?.caption}</p>
+                        {/* <p className="text-white text-sm">{reel?.caption}</p> */}
+                        {reel?.caption && (
+                            <div className="text-sm">
+                                {/* <span className="font-semibold mr-1 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 dark:text-white" onClick={handleProfileClick}>
+                                    {reel?.username}
+                                </span> */}
+                                <span className="text-white dark:text-white">
+                                    {needsTruncate && !showFullCaption
+                                        ? reel?.caption.slice(0, captionLimit) + '...'
+                                        : reel?.caption
+                                    }
+                                </span>
+                                {needsTruncate && (
+                                    <button
+                                        onClick={toggleCaption}
+                                        className="text-blue-500 ml-1 hover:text-blue-700"
+                                    >
+                                        {showFullCaption ? ' thu gọn' : ' xem thêm'}
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Actions */}
