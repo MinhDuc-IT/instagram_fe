@@ -8,6 +8,7 @@ import { fetchProfileUserRequest, fetchSavedPostsRequest, fetchReelsRequest, fet
 import { Post } from "../types/post.type";
 import PostModal from "../components/PostModal";
 import EditProfileModal from "../components/EditProfileModal";
+import { FILTERS } from "../constants/filters"
 
 export default function Profile() {
   const { userId } = useParams<{ userId: string }>();
@@ -102,8 +103,8 @@ export default function Profile() {
           <button
             onClick={() => setActiveTab("posts")}
             className={`flex items-center gap-1.5 py-4 border-t-2 -mt-[1px] transition-colors ${activeTab === "posts"
-                ? "border-black dark:border-white text-black dark:text-white"
-                : "border-transparent text-gray-500"
+              ? "border-black dark:border-white text-black dark:text-white"
+              : "border-transparent text-gray-500"
               }`}
           >
             <Grid className="w-3 h-3 md:w-4 md:h-4" />
@@ -114,8 +115,8 @@ export default function Profile() {
             <button
               onClick={() => setActiveTab("saved")}
               className={`flex items-center gap-1.5 py-4 border-t-2 -mt-[1px] transition-colors ${activeTab === "saved"
-                  ? "border-black dark:border-white text-black dark:text-white"
-                  : "border-transparent text-gray-500"
+                ? "border-black dark:border-white text-black dark:text-white"
+                : "border-transparent text-gray-500"
                 }`}
             >
               <Bookmark className="w-3 h-3 md:w-4 md:h-4" />
@@ -126,8 +127,8 @@ export default function Profile() {
           <button
             onClick={() => setActiveTab("reels")}
             className={`flex items-center gap-1.5 py-4 border-t-2 -mt-[1px] transition-colors ${activeTab === "reels"
-                ? "border-black dark:border-white text-black dark:text-white"
-                : "border-transparent text-gray-500"
+              ? "border-black dark:border-white text-black dark:text-white"
+              : "border-transparent text-gray-500"
               }`}
           >
             <Film className="w-3 h-3 md:w-4 md:h-4" />
@@ -158,6 +159,9 @@ export default function Profile() {
                     src={post.media[0]?.url || "/placeholder.svg"}
                     alt="Post"
                     className="w-full h-full object-cover"
+                    style={{
+                      filter: FILTERS.find(f => f.name === post.media[0].filter)?.filter || 'none'
+                    }}
                   />
                 )}
               </div>
@@ -205,6 +209,9 @@ export default function Profile() {
                     src={post.media[0]?.url || "/placeholder.svg"}
                     alt="Post"
                     className="w-full h-full object-cover"
+                    style={{
+                      filter: FILTERS.find(f => f.name === post.media[0].filter)?.filter || 'none'
+                    }}
                   />
                 )}
               </div>
