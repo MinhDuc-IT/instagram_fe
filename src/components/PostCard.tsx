@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom"
 import { PostService } from "../service/postService"
 import { FollowService } from "../service/followService"
 import { RootState } from "../redux/store"
+import { FILTERS } from "../constants/filters"
 
 interface PostCardProps {
   post: Post;
@@ -169,6 +170,9 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
                 src={post.media[currentIndex].url}
                 alt={post.caption || "Post media"}
                 className="w-full h-full object-cover"
+                style={{
+                  filter: FILTERS.find(f => f.name === post.media[currentIndex].filter)?.filter || 'none'
+                }}
               />
             )}
 

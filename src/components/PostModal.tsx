@@ -14,6 +14,7 @@ import CommentItem from './Comment/CommentItem';
 import { usePostComments } from '../hooks/usePostComments';
 import { DataUtil } from '../utils/DataUtil';
 import EmojiPicker from './Common/EmojiPicker';
+import { FILTERS } from '../constants/filters';
 
 interface PostModalProps {
     post: Post;
@@ -307,6 +308,9 @@ export default function PostModal({ post, onClose, scrollToCommentId, onShareToS
                                         src={p.media[currentIndex].url}
                                         alt={p.caption || 'Post media'}
                                         className="max-h-[90vh] object-contain w-full"
+                                        style={{
+                                            filter: FILTERS.find((f: any) => f.name === p.media[currentIndex].filter)?.filter || 'none'
+                                        }}
                                     />
                                 )}
                             </div>

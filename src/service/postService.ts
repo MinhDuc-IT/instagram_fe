@@ -1,6 +1,7 @@
 import { MediaFile } from '../types/media.types';
 import { Post } from '../types/post.type';
 import axios from '../utils/axiosCustomize';
+import { FILTERS } from '../constants/filters';
 
 interface GetHomePostsParams {
     page?: number
@@ -37,6 +38,14 @@ export const PostService = {
         formData.append('visibility', visibility);
         formData.append('isLikesHidden', isLikesHidden ? 'true' : 'false');
         formData.append('isCommentsDisabled', isCommentsDisabled ? 'true' : 'false');
+
+        const filters = mediaFiles.map(media => {
+            if (media.type === 'image') {
+                return FILTERS[media.selectedFilter || 0].name;
+            }
+            return 'Normal';
+        });
+        formData.append('filters', JSON.stringify(filters));
 
         mediaFiles.forEach((media) => {
             formData.append('files', media.file);
