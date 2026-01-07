@@ -10,6 +10,7 @@ export interface Media {
   height: number | null;
   duration: number | null;
   fileSize: number;
+  filter?: string;
 }
 
 export interface Comment {

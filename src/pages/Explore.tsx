@@ -5,6 +5,7 @@ import PostModal from '../components/PostModal';
 import { RootState } from '../redux/store';
 import { Post } from '../types/post.type';
 import { Heart, Play, MessageCircle } from 'lucide-react';
+import { FILTERS } from "../constants/filters"
 
 export default function Explore() {
     const dispatch = useDispatch();
@@ -102,6 +103,9 @@ export default function Explore() {
                                         className="w-full h-auto object-cover"
                                         onError={(e) => {
                                             e.currentTarget.src = '/placeholder.svg';
+                                        }}
+                                        style={{
+                                          filter: FILTERS.find(f => f.name === post.media[0].filter)?.filter || 'none'
                                         }}
                                     />
                                 )}
