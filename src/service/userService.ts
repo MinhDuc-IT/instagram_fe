@@ -64,6 +64,7 @@ export const getUserByIdApi = async (userId: number): Promise<User> => {
         posts: data.posts || 0,
         phone: data.phone,
         gender: data.gender,
+        website: data.website,
         isFollowing: data.isFollowing || false,
     } as User;
 };

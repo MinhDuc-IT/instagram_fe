@@ -71,10 +71,11 @@ function* handleUpdateProfile(action: ReturnType<typeof updateProfileRequest>): 
     try {
         const payload: UserUpdateRequest = action.payload;
 
-        const res: User = yield call(updateProfile, payload);
-        console.log("Updated profile:", res);
-        yield put(updateProfileSuccess(res));
-        yield put(setUserAvatar(res.avatar ?? ''));
+        const response: any = yield call(updateProfile, payload);
+        const updatedUser = response.data || response;
+        console.log("Updated profile:", updatedUser);
+        yield put(updateProfileSuccess(updatedUser));
+        yield put(setUserAvatar(updatedUser.avatar ?? ''));
     } catch (error: any) {
         yield put(
             updateProfileFailure(

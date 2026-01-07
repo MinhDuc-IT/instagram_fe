@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Send, Heart, MessageCircle } from 'lucide-react';
+import { Info, Phone, Video, MoreHorizontal, Smile, Image, Heart, ChevronLeft } from 'lucide-react';
 import { fetchMessagesRequest, sendMessageRequest, clearAllTypingUsers } from '../redux/features/message/messageSlice';
 import { getSocket } from '../utils/socket';
+import EmojiPicker from './Common/EmojiPicker';
 
-export default function MessageBox({ chat }) {
+export default function MessageBox({ chat, onBack }) {
     const dispatch = useDispatch();
     const { messages, loading, loadingMore, hasMoreMessages, selectedConversationId, typingUsers } = useSelector(
         (state) => state.message,
@@ -104,11 +105,10 @@ export default function MessageBox({ chat }) {
 
             return () => clearTimeout(timer);
         }
-    }, [selectedConversationId, loading, messages.length]);
+    }, [selectedConversationId, loading, messages.length, scrollToBottom, loadingMore]);
 
     // Tự động cuộn xuống khi có tin nhắn mới (không phải khi đang tải thêm tin nhắn cũ)
     const previousMessagesLengthRef = useRef(0);
-    const previousMessagesRef = useRef([]);
 
     useEffect(() => {
         if (
@@ -141,8 +141,7 @@ export default function MessageBox({ chat }) {
         }
 
         previousMessagesLengthRef.current = messages.length;
-        previousMessagesRef.current = messages;
-    }, [messages, loading, loadingMore, isCurrentUser]);
+    }, [messages, loadingMore, isCurrentUser, scrollToBottom]);
 
     // Đặt lại cờ tải thêm khi loadingMore thay đổi
     useEffect(() => {
@@ -237,108 +236,121 @@ export default function MessageBox({ chat }) {
         handleTyping();
     };
 
-    if (!chat) {
-        return (
-            <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                    <MessageCircle className="w-24 h-24 mx-auto mb-4 text-gray-300 dark:text-gray-700" />
-                    <h3 className="text-xl font-semibold mb-2">Your Messages</h3>
-                    <p className="text-gray-500">Send private photos and messages to a friend or group.</p>
-                </div>
-            </div>
-        );
-    }
+    if (!chat) return null;
 
     return (
-        <div className="flex-1 flex flex-col h-full">
-            {/* Tiêu đề */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3">
-                <img
-                    src={chat.avatar || '/placeholder.svg'}
-                    alt={chat.username}
-                    className="w-10 h-10 rounded-full object-cover"
-                />
-                <span className="font-semibold">{chat.username}</span>
+        <div className="flex-1 flex flex-col h-full bg-white dark:bg-black relative">
+            {/* Header */}
+            <div className="h-[75px] px-4 flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                    <button onClick={onBack} className="md:hidden p-2 -ml-2 hover:opacity-70 transition-opacity">
+                        <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <div className="relative">
+                        <img
+                            src={chat.avatar || '/placeholder.svg'}
+                            alt={chat.username}
+                            className="w-11 h-11 rounded-full object-cover border border-gray-100 dark:border-zinc-800"
+                        />
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-black rounded-full" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="font-semibold text-sm leading-tight">{chat.username}</span>
+                        <span className="text-[11px] text-gray-500 leading-tight">Active 5m ago</span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button className="p-2 hover:opacity-70 transition-opacity"><Phone size={22} /></button>
+                    <button className="p-2 hover:opacity-70 transition-opacity"><Video size={24} /></button>
+                    <button className="p-2 hover:opacity-70 transition-opacity"><Info size={24} /></button>
+                </div>
             </div>
 
-            {/* Tin nhắn */}
-            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 space-y-4">
-                {loadingMore && <div className="text-center text-gray-500 text-sm py-2">Đang tải thêm...</div>}
-                {loading && messages.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">Đang tải tin nhắn...</div>
-                ) : messages.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">Chưa có tin nhắn nào</div>
-                ) : (
-                    messages.map((msg, index) => (
-                        <div
-                            key={`${msg.id}-${msg.conversationId}-${index}`}
-                            className={`flex ${isCurrentUser(msg.senderId) ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div
-                                className={`max-w-xs px-4 py-2 rounded-2xl break-words ${
-                                    isCurrentUser(msg.senderId)
-                                        ? 'bg-ig-primary text-white'
-                                        : 'bg-gray-200 dark:bg-gray-800'
-                                }`}
-                            >
-                                <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                                <p
-                                    className={`text-xs mt-1 ${isCurrentUser(msg.senderId) ? 'text-white/70' : 'text-gray-500'}`}
+            {/* Messages */}
+            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 space-y-2">
+                {loadingMore && <div className="text-center text-gray-400 text-[10px] py-2 uppercase tracking-wider font-semibold">Loading more messages...</div>}
+                {messages.map((msg, index) => {
+                    const fromMe = isCurrentUser(msg.senderId);
+                    const isLastInGroup = index === messages.length - 1 || messages[index + 1].senderId !== msg.senderId;
+
+                    return (
+                        <div key={msg.id} className={`flex ${fromMe ? 'justify-end' : 'justify-start'} group max-w-[85%] ${fromMe ? 'ml-auto' : 'mr-auto'}`}>
+                            {!fromMe && (
+                                <div className="w-7 h-7 flex-shrink-0 mt-auto mr-2">
+                                    {isLastInGroup && (
+                                        <img src={chat.avatar || '/placeholder.svg'} className="w-full h-full rounded-full object-cover" />
+                                    )}
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-1">
+                                <div
+                                    className={`px-3.5 py-2 text-sm break-words relative transition-all duration-200 ${fromMe
+                                            ? 'bg-ig-primary text-white rounded-[18px] rounded-br-[4px]'
+                                            : 'bg-gray-100 dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
+                                        }`}
                                 >
-                                    {new Date(msg.createdAt).toLocaleTimeString('vi-VN', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
-                                </p>
+                                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                                </div>
+                                {isLastInGroup && (
+                                    <span className={`text-[10px] text-gray-500 mt-1 ${fromMe ? 'text-right' : 'text-left'}`}>
+                                        {new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                )}
                             </div>
                         </div>
-                    ))
-                )}
-                {/* Chỉ báo đang gõ */}
+                    );
+                })}
                 {typingUsers.length > 0 && (
-                    <div className="flex justify-start">
-                        <div className="max-w-xs px-4 py-2 rounded-2xl bg-gray-200 dark:bg-gray-800">
-                            <div className="flex items-center gap-1">
-                                {/* <p className="text-sm text-gray-500 italic">
-                                    {typingUsers.length === 1
-                                        ? `${typingUsers[0].username} `
-                                        : `${typingUsers.length} người `}
-                                </p> */}
-                                <div className="flex items-center gap-1">
-                                    <span className="typing-dot typing-dot-1" />
-                                    <span className="typing-dot typing-dot-2" />
-                                    <span className="typing-dot typing-dot-3" />
-                                </div>
-                            </div>
+                    <div className="flex justify-start items-center gap-2">
+                        <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200">
+                            <img src={chat.avatar || '/placeholder.svg'} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="bg-gray-100 dark:bg-zinc-800 px-4 py-2 rounded-2xl flex items-center gap-1 h-8">
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" />
                         </div>
                     </div>
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Ô nhập */}
-            <form onSubmit={handleSend} className="p-4 border-t border-gray-200 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                    <input
-                        type="text"
+            {/* Input */}
+            <div className="p-4 flex-shrink-0">
+                <form onSubmit={handleSend} className="relative flex items-center min-h-[44px] border border-gray-200 dark:border-zinc-800 rounded-full px-4 gap-2 focus-within:border-gray-400 transition-colors">
+                    <EmojiPicker
+                        onEmojiSelect={(emoji) => setMessage(message + emoji)}
+                        placement="top-start"
+                        className="text-black dark:text-white"
+                    />
+                    <textarea
+                        rows={1}
                         placeholder="Message..."
                         value={message}
                         onChange={handleMessageChange}
-                        className="flex-1 input-field"
-                        disabled={!selectedConversationId && !chat?.userId}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend(e);
+                            }
+                        }}
+                        className="flex-1 bg-transparent border-none outline-none text-sm resize-none py-2 max-h-32"
                     />
-                    <button type="button" className="p-2 hover:text-gray-500 transition-colors">
-                        <Heart className="w-6 h-6" />
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={!message.trim() || loading || (!selectedConversationId && !chat?.userId)}
-                        className="text-ig-primary font-semibold disabled:opacity-50"
-                    >
-                        <Send className="w-6 h-6" />
-                    </button>
-                </div>
-            </form>
+                    {message.trim() ? (
+                        <button
+                            type="submit"
+                            className="text-ig-primary font-semibold text-sm px-2 hover:opacity-70 transition-opacity"
+                        >
+                            Send
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-3">
+                            <button type="button" className="hover:opacity-70 transition-opacity"><Image size={24} /></button>
+                            <button type="button" className="hover:opacity-70 transition-opacity"><Heart size={24} /></button>
+                        </div>
+                    )}
+                </form>
+            </div>
         </div>
     );
 }

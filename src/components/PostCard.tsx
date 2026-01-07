@@ -152,7 +152,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
       </div>
 
       {/* Media Carousel */}
-      <div className="relative bg-black aspect-square border-y border-gray-200 dark:border-gray-800">
+      <div className="relative bg-black aspect-square rounded-lg overflow-hidden border border-gray-100 dark:border-[#262626]">
         {!hasMedia ? (
           <div className="flex items-center justify-center h-full text-white">No media</div>
         ) : (
