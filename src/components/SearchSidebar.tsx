@@ -51,15 +51,22 @@ export default function SearchSidebar({ isOpen, onClose }: SearchSidebarProps) {
         }
     }, [isOpen]);
 
-    if (!isOpen) return null;
-
     return (
         <>
             {/* Overlay */}
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose} />
+            <div
+                className={`fixed inset-0 bg-black z-40 transition-opacity duration-300 ease-in-out ${
+                    isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
+                }`}
+                onClick={onClose}
+            />
 
             {/* Search Sidebar */}
-            <aside className="fixed left-0 top-0 h-screen w-96 bg-white dark:bg-black border-r border-gray-200 dark:border-gray-800 z-[60] flex flex-col">
+            <aside
+                className={`fixed left-0 top-0 h-screen w-96 bg-white dark:bg-black border-r border-gray-200 dark:border-gray-800 z-[60] flex flex-col transition-transform duration-300 ease-in-out ${
+                    isOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
                     <h2 className="text-xl font-bold">Search</h2>
