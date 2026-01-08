@@ -73,6 +73,12 @@ export const commentSlice = createSlice({
             state.loading = false;
             state.error = action.payload;
         },
+        resetListComment: (state) => {
+            state.comments = [];
+            state.cursor = '';
+            state.hasMore = false;
+            state.repliesComments = {};
+        },
 
         // Action: Get replies
         getRepliesRequest: (state, _action: PayloadAction<getRepliesPayload>) => {
@@ -200,6 +206,7 @@ export const {
     updateReplies,
     appendReplies,
     updateLikeComment,
+    resetListComment,
 } = commentSlice.actions;
 
 export default commentSlice.reducer;

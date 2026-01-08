@@ -6,7 +6,7 @@ import Tippy from '@tippyjs/react/headless';
 import 'tippy.js/dist/tippy.css';
 import { CommentService } from '../../service/commentService';
 import { usePostComments } from '../../hooks/usePostComments';
-import { createCommentRequest, getCommentsRequest, updateLikeComment } from '../../redux/features/comment/commentSlice';
+import { createCommentRequest, getCommentsRequest, updateLikeComment, resetListComment } from '../../redux/features/comment/commentSlice';
 import CommentItem from '../Comment/CommentItem';
 import { COMMENTS_PAGE_SIZE } from '../../constants/filters';
 import EmojiPicker from '../Common/EmojiPicker';
@@ -37,6 +37,7 @@ function Comment({ reel, showComments, setShowComments, avatarUrl, handleClickCo
 
     useEffect(() => {
         if (!showComments) return;
+        dispatch(resetListComment());
 
         const fetchComments = async () => {
             dispatch(getCommentsRequest({ postId: reel.id, page: COMMENTS_PAGE_SIZE }));
