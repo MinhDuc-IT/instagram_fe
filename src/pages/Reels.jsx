@@ -1,12 +1,15 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Loader } from 'lucide-react';
-import { reels } from '../data/posts';
+
+import { setReelsFirst, appendReels } from '../redux/features/reels/reelsSlice';
 import ReelCard from '../components/Reels/ReelCard';
 import { ReelService } from '../service/reelService';
 import { REELS_PAGE_SIZE } from '../constants/filters';
 
 export default function Reels() {
+    const dispatch = useDispatch();
     const [reels, setReels] = useState([]);
     const [cursor, setCursor] = useState(undefined);
     const [loading, setLoading] = useState(false);
@@ -29,6 +32,7 @@ export default function Reels() {
                 const response = await ReelService.getReelsPagination(REELS_PAGE_SIZE);
                 console.log('API Response:', response.data);
                 setReels(response.data);
+                dispatch(setReelsFirst(response.data));
                 setCursor(response.nextCursor);
                 setHasMore(response.hasMore);
             } catch (error) {
@@ -68,6 +72,7 @@ export default function Reels() {
         try {
             const response = await ReelService.getReelsPagination(REELS_PAGE_SIZE, cursor);
             setReels((prev) => [...prev, ...response.data]);
+            dispatch(appendReels(response.data));
             setCursor(response.nextCursor);
             setHasMore(response.hasMore);
         } catch (error) {

@@ -3,6 +3,7 @@ import userSaga from './features/user/userSaga';
 import authSaga from './features/auth/authSaga';
 import messageSaga from './features/message/messageSaga';
 import commentSaga from './features/comment/commentSaga';
+import { reelsSaga } from './features/reels/reelsSaga';
 import { notificationSaga } from './features/notification/notificationSaga';
 import postSaga from './features/post/postSaga';
 import { storySaga } from './features/story/storySaga';
@@ -16,5 +17,6 @@ export default function* rootSaga() {
         notificationSaga(),
         postSaga(),
         storySaga(),
+        reelsSaga(),
     ])
 }
