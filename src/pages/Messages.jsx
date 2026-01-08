@@ -20,6 +20,7 @@ export default function Messages() {
     const [searchParams] = useSearchParams();
     const { conversations, loading, error } = useSelector((state) => state.message);
     const { profileUser } = useSelector((state) => state.users);
+    const currentUser = useSelector((state) => state.auth.user);
     const [selectedChat, setSelectedChat] = useState(null);
 
     // Resizing logic
@@ -27,7 +28,22 @@ export default function Messages() {
         const savedWidth = localStorage.getItem('chatSidebarWidth');
         return savedWidth ? parseInt(savedWidth, 10) : 398;
     });
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.innerWidth < 768;
+        }
+        return false;
+    });
     const isResizing = useRef(false);
+
+    // Update isMobile on window resize
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const startResizing = useCallback((e) => {
         isResizing.current = true;
@@ -163,11 +179,14 @@ export default function Messages() {
     }));
 
     return (
-        <div id="messages-container" className="h-[calc(100vh-0px)] flex bg-white dark:bg-black overflow-hidden border-x border-gray-200 dark:border-zinc-800 max-w-[1500px] mx-auto">
+        <div
+            id="messages-container"
+            className="h-[calc(100vh-0px)] flex bg-white dark:bg-black overflow-hidden border-x border-gray-200 dark:border-zinc-800 max-w-[1500px] mx-auto"
+        >
             {/* Danh sách cuộc trò chuyện */}
             <div
                 className={`flex-shrink-0 flex flex-col ${selectedChat ? 'hidden md:flex' : 'flex'}`}
-                style={{ width: window.innerWidth >= 768 ? `${sidebarWidth}px` : '100%' }}
+                style={{ width: !isMobile ? `${sidebarWidth}px` : '100%' }}
             >
                 {loading && conversations.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">Đang tải...</div>
@@ -178,7 +197,7 @@ export default function Messages() {
                         chats={transformedChats}
                         selectedChat={selectedChat}
                         onSelectChat={handleSelectChat}
-                        currentUser={useSelector((state) => state.auth.user)}
+                        currentUser={currentUser}
                     />
                 )}
             </div>
@@ -202,7 +221,9 @@ export default function Messages() {
                                 <MessageCircle className="w-12 h-12" />
                             </div>
                             <h3 className="text-xl font-normal mb-2">Your Messages</h3>
-                            <p className="text-gray-500 text-sm">Send private photos and messages to a friend or group.</p>
+                            <p className="text-gray-500 text-sm">
+                                Send private photos and messages to a friend or group.
+                            </p>
                             <button className="mt-6 bg-ig-primary text-white px-4 py-1.5 rounded-lg font-semibold text-sm hover:opacity-90 transition">
                                 Send message
                             </button>
