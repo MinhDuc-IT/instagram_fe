@@ -160,7 +160,7 @@ export default function Profile() {
                     alt="Post"
                     className="w-full h-full object-cover"
                     style={{
-                      filter: FILTERS.find(f => f.name === post.media[0].filter)?.filter || 'none'
+                      filter: FILTERS.find(f => f.name === post.media[0]?.filter)?.filter || 'none'
                     }}
                   />
                 )}
