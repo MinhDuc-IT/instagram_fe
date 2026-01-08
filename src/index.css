@@ -13,11 +13,13 @@
         opacity: 0;
         transform: scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
     }
 }
+
 .animate-scaleIn {
     animation: scaleIn 0.2s ease-out;
 }
@@ -27,10 +29,12 @@
         opacity: 1;
         transform: scale(1);
     }
+
     80% {
         opacity: 0.6;
         transform: scale(0.7);
     }
+
     100% {
         opacity: 0;
         transform: scale(0.4);
@@ -43,11 +47,11 @@
 
 @layer components {
     .btn-primary {
-        @apply bg-ig-primary text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors;
+        @apply bg-[#0095f6] hover:bg-[#1877f2] text-white font-semibold py-1.5 px-4 rounded-lg transition-colors text-sm;
     }
 
     .btn-secondary {
-        @apply bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors;
+        @apply bg-[#efefef] hover:bg-[#dbdbdb] dark:bg-[#363636] dark:hover:bg-[#262626] text-black dark:text-white font-semibold py-1.5 px-4 rounded-lg transition-colors text-sm;
     }
 
     .input-field {
@@ -89,12 +93,14 @@
 
 /* Typing dots animation */
 @keyframes typingBounce {
+
     0%,
     60%,
     100% {
         transform: translateY(0);
         opacity: 0.7;
     }
+
     30% {
         transform: translateY(-10px);
         opacity: 1;

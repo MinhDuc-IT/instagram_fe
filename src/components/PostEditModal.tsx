@@ -8,6 +8,7 @@ import { Post, PostVisibility, Media } from "../types/post.type";
 import UploadService from "../service/uploadService";
 import { PostService } from "../service/postService";
 import { updatePost } from "../redux/features/user/userSlice";
+import EmojiPicker from "./Common/EmojiPicker";
 
 interface Props {
     post: Post;
@@ -218,8 +219,14 @@ export default function PostEditModal({ post, onClose }: Props) {
                                     placeholder="Write a caption..."
                                     className="w-full bg-transparent border-none p-0 resize-none focus:ring-0 text-sm leading-relaxed"
                                 />
-                                <div className="flex justify-end text-xs text-gray-400 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                                    {caption.length} / 2200
+                                <div className="flex justify-between items-center border-b border-gray-100 dark:border-zinc-800 pb-2">
+                                    <EmojiPicker
+                                        onEmojiSelect={(emoji) => setCaption(caption + emoji)}
+                                        placement="bottom-start"
+                                    />
+                                    <div className="text-xs text-gray-400">
+                                        {caption.length} / 2200
+                                    </div>
                                 </div>
                             </div>
                         </div>

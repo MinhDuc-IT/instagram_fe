@@ -6,7 +6,6 @@ import { RootState } from './redux/store';
 import { useNotifications } from './hooks/useNotifications';
 import { fetchConversationsRequest } from './redux/features/message/messageSlice';
 import { fetchNotificationsRequest } from './redux/features/notification/notificationSlice';
-
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';

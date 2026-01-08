@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom"
 import { PostService } from "../service/postService"
 import { FollowService } from "../service/followService"
 import { RootState } from "../redux/store"
+import { FILTERS } from "../constants/filters"
 
 interface PostCardProps {
   post: Post;
@@ -22,7 +23,8 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showFullCaption, setShowFullCaption] = useState(false)
   const [isSaved, setIsSaved] = useState(post.isSaved ?? false)
-  const [isFollowing, setIsFollowing] = useState(post.isFollowing ?? false)
+
+  const isFollowing = post.isFollowing ?? false
 
   const hasMedia = post.media && post.media.length > 0
   const isMultiple = (post.media?.length ?? 0) > 1
@@ -87,9 +89,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
     const originalIsFollowing = isFollowing
     const newIsFollowing = !originalIsFollowing
 
-    // Optimistic update
-    setIsFollowing(newIsFollowing)
-    // Update posts in home feed
+    // Update posts in home feed via Redux (optimistic)
     dispatch(toggleFollowInPost(post.userId))
     // Update user in users list (for profile)
     dispatch(toggleFollow(post.userId))
@@ -100,7 +100,6 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
     } catch (err) {
       console.error("Follow API failed", err)
       // Rollback on error
-      setIsFollowing(originalIsFollowing)
       dispatch(toggleFollowInPost(post.userId))
       dispatch(toggleFollow(post.userId))
     }
@@ -154,7 +153,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
       </div>
 
       {/* Media Carousel */}
-      <div className="relative bg-black aspect-square border-y border-gray-200 dark:border-gray-800">
+      <div className="relative bg-black aspect-square rounded-lg overflow-hidden border border-gray-100 dark:border-[#262626]">
         {!hasMedia ? (
           <div className="flex items-center justify-center h-full text-white">No media</div>
         ) : (
@@ -171,6 +170,9 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
                 src={post.media[currentIndex].url}
                 alt={post.caption || "Post media"}
                 className="w-full h-full object-cover"
+                style={{
+                  filter: FILTERS.find(f => f.name === post.media[currentIndex].filter)?.filter || 'none'
+                }}
               />
             )}
 

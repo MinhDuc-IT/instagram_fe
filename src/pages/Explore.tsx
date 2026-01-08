@@ -5,6 +5,7 @@ import PostModal from '../components/PostModal';
 import { RootState } from '../redux/store';
 import { Post } from '../types/post.type';
 import { Heart, Play, MessageCircle, Copy } from 'lucide-react';
+import { FILTERS } from "../constants/filters"
 
 export default function Explore() {
     const dispatch = useDispatch();
@@ -145,6 +146,9 @@ export default function Explore() {
 
             {/* End of posts message */}
             {!loading && !hasMore && posts.length > 0 && <div className="text-center py-8 text-gray-500 text-sm"></div>}
+            {/* {!loading && !hasMore && posts.length > 0 && (
+                <div className="text-center py-8 text-gray-500 text-sm">You've reached the end! 🎉</div>
+            )} */}
 
             {/* Post Modal */}
             {selectedPost && <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />}

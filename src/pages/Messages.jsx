@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -13,6 +13,7 @@ import { fetchProfileUserRequest } from '../redux/features/user/userSlice';
 import { useSocket } from '../hooks/useSocket';
 import ChatList from '../components/ChatList';
 import MessageBox from '../components/MessageBox';
+import { MessageCircle } from 'lucide-react';
 
 export default function Messages() {
     const dispatch = useDispatch();
@@ -20,6 +21,56 @@ export default function Messages() {
     const { conversations, loading, error } = useSelector((state) => state.message);
     const { profileUser } = useSelector((state) => state.users);
     const [selectedChat, setSelectedChat] = useState(null);
+
+    // Resizing logic
+    const [sidebarWidth, setSidebarWidth] = useState(() => {
+        const savedWidth = localStorage.getItem('chatSidebarWidth');
+        return savedWidth ? parseInt(savedWidth, 10) : 398;
+    });
+    const isResizing = useRef(false);
+
+    const startResizing = useCallback((e) => {
+        isResizing.current = true;
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', stopResizing);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        isResizing.current = false;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', stopResizing);
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = 'auto';
+    }, []);
+
+    const handleMouseMove = useCallback((e) => {
+        if (!isResizing.current) return;
+
+        // Calculate the new width based on mouse position relative to the container
+        // We use a simpler approach since the container is max-width and centered
+        // We can get the offset of the container to be more precise
+        const container = document.getElementById('messages-container');
+        if (!container) return;
+
+        const containerRect = container.getBoundingClientRect();
+        let newWidth = e.clientX - containerRect.left;
+
+        // Constraints
+        if (newWidth < 250) newWidth = 250;
+        if (newWidth > 600) newWidth = 600;
+
+        setSidebarWidth(newWidth);
+        localStorage.setItem('chatSidebarWidth', newWidth.toString());
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', stopResizing);
+        };
+    }, [handleMouseMove, stopResizing]);
 
     // Khởi tạo kết nối socket
     useSocket();
@@ -112,37 +163,53 @@ export default function Messages() {
     }));
 
     return (
-        <div className="h-screen flex">
+        <div id="messages-container" className="h-[calc(100vh-0px)] flex bg-white dark:bg-black overflow-hidden border-x border-gray-200 dark:border-zinc-800 max-w-[1500px] mx-auto">
             {/* Danh sách cuộc trò chuyện */}
-            <div className="w-full md:w-96 flex-shrink-0">
+            <div
+                className={`flex-shrink-0 flex flex-col ${selectedChat ? 'hidden md:flex' : 'flex'}`}
+                style={{ width: window.innerWidth >= 768 ? `${sidebarWidth}px` : '100%' }}
+            >
                 {loading && conversations.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">Đang tải...</div>
                 ) : error ? (
                     <div className="p-4 text-center text-red-500">{error}</div>
-                ) : transformedChats.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">Chưa có cuộc trò chuyện nào</div>
                 ) : (
-                    <ChatList chats={transformedChats} selectedChat={selectedChat} onSelectChat={handleSelectChat} />
+                    <ChatList
+                        chats={transformedChats}
+                        selectedChat={selectedChat}
+                        onSelectChat={handleSelectChat}
+                        currentUser={useSelector((state) => state.auth.user)}
+                    />
                 )}
             </div>
 
-            {/* Hộp tin nhắn */}
-            <div className="hidden md:flex flex-1">
-                <MessageBox chat={selectedChat} />
+            {/* Resize Divider */}
+            <div
+                onMouseDown={startResizing}
+                className="hidden md:block w-1 hover:w-1.5 cursor-col-resize bg-transparent hover:bg-ig-primary/30 transition-all duration-200 relative z-10"
+            >
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1px] bg-gray-200 dark:border-zinc-800" />
             </div>
 
-            {/* Hộp tin nhắn trên mobile */}
-            {selectedChat && (
-                <div className="md:hidden fixed inset-0 bg-white dark:bg-black z-50">
-                    <MessageBox chat={selectedChat} />
-                    <button
-                        onClick={() => setSelectedChat(null)}
-                        className="absolute top-4 left-4 text-ig-primary font-semibold"
-                    >
-                        ← Back
-                    </button>
-                </div>
-            )}
+            {/* Hộp tin nhắn */}
+            <div className={`flex-1 flex flex-col bg-white dark:bg-black ${!selectedChat ? 'hidden md:flex' : 'flex'}`}>
+                {selectedChat ? (
+                    <MessageBox chat={selectedChat} onBack={() => setSelectedChat(null)} />
+                ) : (
+                    <div className="flex-1 flex items-center justify-center p-4">
+                        <div className="text-center max-w-sm">
+                            <div className="w-24 h-24 rounded-full border-2 border-black dark:border-white flex items-center justify-center mx-auto mb-4">
+                                <MessageCircle className="w-12 h-12" />
+                            </div>
+                            <h3 className="text-xl font-normal mb-2">Your Messages</h3>
+                            <p className="text-gray-500 text-sm">Send private photos and messages to a friend or group.</p>
+                            <button className="mt-6 bg-ig-primary text-white px-4 py-1.5 rounded-lg font-semibold text-sm hover:opacity-90 transition">
+                                Send message
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { MediaFile } from '../types/media.types';
 import { Post } from '../types/post.type';
 import axios from '../utils/axiosCustomize';
+import { FILTERS } from '../constants/filters';
 
 interface GetHomePostsParams {
     page?: number
@@ -38,6 +39,14 @@ export const PostService = {
         formData.append('isLikesHidden', isLikesHidden ? 'true' : 'false');
         formData.append('isCommentsDisabled', isCommentsDisabled ? 'true' : 'false');
 
+        const filters = mediaFiles.map(media => {
+            if (media.type === 'image') {
+                return FILTERS[media.selectedFilter || 0].name;
+            }
+            return 'Normal';
+        });
+        formData.append('filters', JSON.stringify(filters));
+
         mediaFiles.forEach((media) => {
             formData.append('files', media.file);
         });
@@ -64,12 +73,38 @@ export const PostService = {
         }
     },
 
-    async getPostsByUserId(userId: number = 5) {
+    async getPostsByUserId(userId: number, page = 1, limit = 10) {
         try {
-            const response = await axios.get(`post/user/${userId}`);
+            const response = await axios.get(`post/user/${userId}`, {
+                params: { page, limit }
+            });
             return response;
         } catch (error) {
-            console.error("Error fetching post detail:", error);
+            console.error("Error fetching user posts:", error);
+            throw error;
+        }
+    },
+
+    async getSavedPosts(userId: number, page = 1, limit = 10) {
+        try {
+            const response = await axios.get(`post/user/${userId}/saved`, {
+                params: { page, limit }
+            });
+            return response;
+        } catch (error) {
+            console.error("Error fetching saved posts:", error);
+            throw error;
+        }
+    },
+
+    async getUserReels(userId: number, page = 1, limit = 10) {
+        try {
+            const response = await axios.get(`post/user/${userId}/reels`, {
+                params: { page, limit }
+            });
+            return response;
+        } catch (error) {
+            console.error("Error fetching user reels:", error);
             throw error;
         }
     },

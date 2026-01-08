@@ -4,6 +4,9 @@ import MediaPreview from './MediaPreview';
 import { MediaFile } from '../../types/media.types';
 import { RootState, AppDispatch } from "../../redux/store";
 import { useSelector } from 'react-redux';
+import EmojiPicker from '../Common/EmojiPicker';
+import AiCaptionModal from './AiCaptionModal';
+import { Sparkles } from 'lucide-react';
 
 interface CaptionStepProps {
     currentMedia: MediaFile;
@@ -37,6 +40,7 @@ const CaptionStep: React.FC<CaptionStepProps> = ({
     onLocationChange,
 }) => {
     const { user: currentUser } = useSelector((state: RootState) => state.auth);
+    const [isAiModalOpen, setIsAiModalOpen] = React.useState(false);
 
     return (
         <>
@@ -66,9 +70,24 @@ const CaptionStep: React.FC<CaptionStepProps> = ({
                         {caption.length}/2,200
                     </div>
 
-                    <button className="text-gray-400 hover:text-gray-600 mt-2">
-                        <Smile size={20} />
-                    </button>
+                    <div className="flex items-center justify-between mt-2">
+                        <EmojiPicker
+                            onEmojiSelect={(emoji) => onCaptionChange(caption + emoji)}
+                        />
+                        <button
+                            onClick={() => setIsAiModalOpen(true)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 text-purple-600 dark:text-purple-400 rounded-lg text-xs font-bold transition-all border border-purple-200 dark:border-purple-800"
+                        >
+                            <Sparkles size={14} />
+                            AI
+                        </button>
+                    </div>
+
+                    <AiCaptionModal
+                        isOpen={isAiModalOpen}
+                        onClose={() => setIsAiModalOpen(false)}
+                        onApply={(newCaption) => onCaptionChange(newCaption)}
+                    />
 
                     <div className="mt-4 pt-4 border-t">
                         <div className="flex items-center gap-2">

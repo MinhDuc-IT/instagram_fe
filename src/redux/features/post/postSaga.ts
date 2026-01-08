@@ -13,6 +13,7 @@ import {
   createPostRequest,
   createPostSuccess,
   createPostFailure,
+  toggleLikeOptimistic,
 } from "./postSlice"
 import { RootState } from "../../store"
 import { PayloadAction } from "@reduxjs/toolkit"
@@ -100,8 +101,18 @@ function* createPostSaga(action: PayloadAction<{ caption: string; image: File; l
   }
 }
 
+// Toggle like saga
+function* toggleLikeSaga(action: PayloadAction<string>): SagaIterator {
+  try {
+    yield call(PostService.like, action.payload)
+  } catch (err) {
+    console.error("Like API failed", err)
+  }
+}
+
 export default function* postSaga() {
   yield takeLatest(fetchHomeFeed.type, fetchHomeFeedSaga)
   yield takeLatest(fetchMorePosts.type, fetchMorePostsSaga)
   yield takeLatest(createPostRequest.type, createPostSaga)
+  yield takeLatest(toggleLikeOptimistic.type, toggleLikeSaga)
 }

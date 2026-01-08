@@ -33,11 +33,19 @@ export interface UsersState {
     profileUser: User | null; // User được xem (khác currentUser)
     profileUserId: number | null; // Track userId để tránh fetch lại
     userPosts: Post[];
-    likedPosts: Post[];
+    userPostsHasMore: boolean;
+    userPostsPage: number;
     savedPosts: Post[];
+    savedPostsHasMore: boolean;
+    savedPostsPage: number;
     userReels: Post[];
+    userReelsHasMore: boolean;
+    userReelsPage: number;
     loading: boolean;
+    postsLoading: boolean;
     error: string | null;
+    searchResults: User[];
+    searchLoading: boolean;
 }
 
 const initialState: UsersState = {
@@ -45,11 +53,19 @@ const initialState: UsersState = {
     profileUser: null,
     profileUserId: null,
     userPosts: [],
-    likedPosts: [],
+    userPostsHasMore: true,
+    userPostsPage: 1,
     savedPosts: [],
+    savedPostsHasMore: true,
+    savedPostsPage: 1,
     userReels: [],
+    userReelsHasMore: true,
+    userReelsPage: 1,
     loading: false,
+    postsLoading: false,
     error: null,
+    searchResults: [],
+    searchLoading: false,
 };
 
 export const userSlice = createSlice({
@@ -70,17 +86,15 @@ export const userSlice = createSlice({
             state.error = action.payload;
         },
 
-        // Profile User (fetch user info + posts)
+        // Profile User (fetch user info ONLY)
         fetchProfileUserRequest: (state, _action: PayloadAction<number>) => {
             state.loading = true;
             state.error = null;
         },
-        fetchProfileUserSuccess: (state, action: PayloadAction<{ user: User; posts: Post[] }>) => {
-            state.users = state.users.map((u) => (u.id === action.payload.user.id ? action.payload.user : u));
-            console.log("action.payload.user", action.payload.user);
-            state.profileUser = action.payload.user;
-            state.profileUserId = action.payload.user.id; // Track để tránh fetch lại
-            state.userPosts = action.payload.posts;
+        fetchProfileUserSuccess: (state, action: PayloadAction<User>) => {
+            state.users = state.users.map((u) => (u.id === action.payload.id ? action.payload : u));
+            state.profileUser = action.payload;
+            state.profileUserId = action.payload.id;
             state.loading = false;
         },
         fetchProfileUserFailure: (state, action: PayloadAction<string>) => {
@@ -103,56 +117,69 @@ export const userSlice = createSlice({
             state.error = action.payload;
         },
 
-        // Posts
-        fetchUserPostsRequest: (state, _action: PayloadAction<number>) => {
-            state.loading = true;
+        // Posts (UserPosts)
+        fetchUserPostsRequest: (state, _action: PayloadAction<{ userId: number; page: number }>) => {
+            state.postsLoading = true;
             state.error = null;
         },
-        fetchUserPostsSuccess: (state, action: PayloadAction<Post[]>) => {
-            state.userPosts = action.payload;
-            state.loading = false;
+        fetchUserPostsSuccess: (state, action: PayloadAction<{ posts: Post[]; pagination: any }>) => {
+            if (action.payload.pagination.currentPage === 1) {
+                state.userPosts = action.payload.posts;
+            } else {
+                const existingIds = new Set(state.userPosts.map((p) => p.id));
+                const newPosts = action.payload.posts.filter((p) => !existingIds.has(p.id));
+                state.userPosts.push(...newPosts);
+            }
+            state.userPostsPage = action.payload.pagination.currentPage;
+            state.userPostsHasMore = action.payload.pagination.hasMore;
+            state.postsLoading = false;
         },
         fetchUserPostsFailure: (state, action: PayloadAction<string>) => {
-            state.loading = false;
+            state.postsLoading = false;
             state.error = action.payload;
         },
 
-        fetchLikedPostsRequest: (state, _action: PayloadAction<number>) => {
-            state.loading = true;
+        // Saved Posts
+        fetchSavedPostsRequest: (state, _action: PayloadAction<{ userId: number; page: number }>) => {
+            state.postsLoading = true;
             state.error = null;
         },
-        fetchLikedPostsSuccess: (state, action: PayloadAction<Post[]>) => {
-            state.likedPosts = action.payload;
-            state.loading = false;
-        },
-        fetchLikedPostsFailure: (state, action: PayloadAction<string>) => {
-            state.loading = false;
-            state.error = action.payload;
-        },
-
-        fetchSavedPostsRequest: (state, _action: PayloadAction<number>) => {
-            state.loading = true;
-            state.error = null;
-        },
-        fetchSavedPostsSuccess: (state, action: PayloadAction<Post[]>) => {
-            state.savedPosts = action.payload;
-            state.loading = false;
+        fetchSavedPostsSuccess: (state, action: PayloadAction<{ posts: Post[]; pagination: any }>) => {
+            if (action.payload.pagination.currentPage === 1) {
+                state.savedPosts = action.payload.posts;
+            } else {
+                const existingIds = new Set(state.savedPosts.map((p) => p.id));
+                const newPosts = action.payload.posts.filter((p) => !existingIds.has(p.id));
+                state.savedPosts.push(...newPosts);
+            }
+            state.savedPostsPage = action.payload.pagination.currentPage;
+            state.savedPostsHasMore = action.payload.pagination.hasMore;
+            state.postsLoading = false;
         },
         fetchSavedPostsFailure: (state, action: PayloadAction<string>) => {
-            state.loading = false;
+            state.postsLoading = false;
             state.error = action.payload;
         },
 
-        fetchReelsRequest: (state, _action: PayloadAction<number>) => {
-            state.loading = true;
+        // Reels
+        fetchReelsRequest: (state, _action: PayloadAction<{ userId: number; page: number }>) => {
+            state.postsLoading = true;
             state.error = null;
         },
-        fetchReelsSuccess: (state, action: PayloadAction<Post[]>) => {
-            state.userReels = action.payload;
-            state.loading = false;
+        fetchReelsSuccess: (state, action: PayloadAction<{ posts: Post[]; pagination: any }>) => {
+            if (action.payload.pagination.currentPage === 1) {
+                state.userReels = action.payload.posts;
+            } else {
+                const existingIds = new Set(state.userReels.map((p) => p.id));
+                const newPosts = action.payload.posts.filter((p) => !existingIds.has(p.id));
+                state.userReels.push(...newPosts);
+            }
+            state.userReelsPage = action.payload.pagination.currentPage;
+            state.userReelsHasMore = action.payload.pagination.hasMore;
+            state.postsLoading = false;
         },
         fetchReelsFailure: (state, action: PayloadAction<string>) => {
-            state.loading = false;
+            state.postsLoading = false;
             state.error = action.payload;
         },
 
@@ -190,10 +217,10 @@ export const userSlice = createSlice({
             state.users = state.users.map((user) =>
                 user.id === userId
                     ? {
-                        ...user,
-                        isFollowing: !user.isFollowing,
-                        followers: user.isFollowing ? (user.followers ?? 0) - 1 : (user.followers ?? 0) + 1,
-                    }
+                          ...user,
+                          isFollowing: !user.isFollowing,
+                          followers: user.isFollowing ? (user.followers ?? 0) - 1 : (user.followers ?? 0) + 1,
+                      }
                     : user,
             );
 
@@ -236,6 +263,21 @@ export const userSlice = createSlice({
                 return { ...p, comments: [...(p.comments || []), comment] } as Post;
             });
         },
+
+        // Search users
+        searchUsersRequest: (state, _action: PayloadAction<{ query: string; limit?: number }>) => {
+            state.searchLoading = true;
+            state.error = null;
+        },
+        searchUsersSuccess: (state, action: PayloadAction<User[]>) => {
+            state.searchResults = action.payload;
+            state.searchLoading = false;
+        },
+        searchUsersFailure: (state, action: PayloadAction<string>) => {
+            state.searchLoading = false;
+            state.error = action.payload;
+            state.searchResults = [];
+        },
     },
 });
 
@@ -249,9 +291,6 @@ export const {
     fetchUserPostsRequest,
     fetchUserPostsSuccess,
     fetchUserPostsFailure,
-    fetchLikedPostsRequest,
-    fetchLikedPostsSuccess,
-    fetchLikedPostsFailure,
     fetchSavedPostsRequest,
     fetchSavedPostsSuccess,
     fetchSavedPostsFailure,
@@ -267,6 +306,9 @@ export const {
     updateProfileRequest,
     updateProfileSuccess,
     updateProfileFailure,
+    searchUsersRequest,
+    searchUsersSuccess,
+    searchUsersFailure,
 } = userSlice.actions;
 
 export default userSlice.reducer;
