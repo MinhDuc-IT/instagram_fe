@@ -23,6 +23,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showFullCaption, setShowFullCaption] = useState(false)
   const [isSaved, setIsSaved] = useState(post.isSaved ?? false)
+  const [showShareMenu, setShowShareMenu] = useState(false)
 
   const isFollowing = post.isFollowing ?? false
 
@@ -236,9 +237,34 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
                 <span className="text-sm font-semibold dark:text-white">{DataUtil.formatlikeCount(post.commentsCount)}</span>
               )}
             </button>
-            <button className="hover:text-gray-500 transition" onClick={(e) => e.stopPropagation()}>
-              <Send size={24} strokeWidth={2} className="dark:text-white" />
-            </button>
+            <div className="relative flex items-center">
+              <button
+                aria-label="Share"
+                className="hover:text-gray-500 transition flex items-center justify-center h-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowShareMenu(!showShareMenu);
+                }}
+              >
+                <Send size={24} strokeWidth={2} className="dark:text-white" />
+              </button>
+              {showShareMenu && (
+                <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-50 w-48 overflow-hidden">
+                  <button
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition dark:text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const postUrl = `${window.location.origin}/post/${post.id || post.id}`;
+                      navigator.clipboard.writeText(postUrl);
+                      setShowShareMenu(false);
+                      alert('Link copied!');
+                    }}
+                  >
+                    Copy link
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <button onClick={handleSave} className="hover:text-gray-500 transition">
             <Bookmark

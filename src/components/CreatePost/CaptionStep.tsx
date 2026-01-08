@@ -87,6 +87,8 @@ const CaptionStep: React.FC<CaptionStepProps> = ({
                         isOpen={isAiModalOpen}
                         onClose={() => setIsAiModalOpen(false)}
                         onApply={(newCaption) => onCaptionChange(newCaption)}
+                        currentMedia={currentMedia}
+                        mediaFiles={mediaFiles}
                     />
 
                     <div className="mt-4 pt-4 border-t">

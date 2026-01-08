@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { X, Sparkles, Loader2, Check } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { AiCaptionService, GenerateCaptionRequest, CaptionVariant } from '../../service/aiCaptionService';
+import { MediaFile } from '../../types/media.types';
 
 interface AiCaptionModalProps {
     isOpen: boolean;
     onClose: () => void;
     onApply: (caption: string) => void;
+    currentMedia?: MediaFile;
+    mediaFiles?: MediaFile[];
 }
 
-const AiCaptionModal: React.FC<AiCaptionModalProps> = ({ isOpen, onClose, onApply }) => {
+const AiCaptionModal: React.FC<AiCaptionModalProps> = ({ isOpen, onClose, onApply, currentMedia, mediaFiles }) => {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<CaptionVariant[] | null>(null);
     const [formData, setFormData] = useState<GenerateCaptionRequest>({
@@ -23,23 +26,58 @@ const AiCaptionModal: React.FC<AiCaptionModalProps> = ({ isOpen, onClose, onAppl
 
     if (!isOpen) return null;
 
-    const handleGenerate = async () => {
-        if (!formData.userDescription.trim()) return;
-
+    const handleGenerateWithAi = async () => {
         setLoading(true);
         setResult(null);
         try {
-            const response = await AiCaptionService.generate(formData);
+            toast.info('AI đang phân tích và tạo caption...');
+
+            let payload: GenerateCaptionRequest | FormData;
+
+            if (mediaFiles && mediaFiles.length > 0) {
+                const data = new FormData();
+                mediaFiles.forEach((media) => {
+                    if (media.file) {
+                        data.append('images', media.file);
+                    }
+                });
+                data.append('userDescription', formData.userDescription || 'Analyze these images and create a caption');
+                data.append('language', formData.language || 'vi');
+                data.append('intent', formData.intent || 'branding');
+                data.append('tone', formData.tone || 'natural');
+                data.append('maxVariants', String(formData.maxVariants || 3));
+                if (formData.brandStyle) data.append('brandStyle', formData.brandStyle);
+                payload = data;
+            } else if (currentMedia?.file) {
+                const data = new FormData();
+                data.append('images', currentMedia.file);
+                data.append('userDescription', formData.userDescription || 'Analyze this image and create a caption');
+                data.append('language', formData.language || 'vi');
+                data.append('intent', formData.intent || 'branding');
+                data.append('tone', formData.tone || 'natural');
+                data.append('maxVariants', String(formData.maxVariants || 3));
+                if (formData.brandStyle) data.append('brandStyle', formData.brandStyle);
+                payload = data;
+            } else {
+                if (!formData.userDescription.trim()) {
+                    toast.warn('Vui lòng nhập mô tả hoặc chọn ảnh');
+                    setLoading(false);
+                    return;
+                }
+                payload = formData;
+            }
+
+            const response = await AiCaptionService.generate(payload);
 
             if (!response || !response.captions || (response as any).statusCode >= 400) {
-                throw new Error((response as any).message || 'Invalid response from AI');
+                throw new Error((response as any).message || 'AI không thể tạo caption lúc này');
             }
 
             setResult(response.captions);
-        } catch (error) {
-            console.error('Failed to generate caption:', error);
-            onClose();
-            toast.error('Dịch vụ bận');
+            toast.success('Đã tạo caption thành công!');
+        } catch (error: any) {
+            console.error('AI Caption generation failed:', error);
+            toast.error(error.message || 'Dịch vụ bận, vui lòng thử lại sau');
         } finally {
             setLoading(false);
         }
@@ -100,6 +138,13 @@ const AiCaptionModal: React.FC<AiCaptionModalProps> = ({ isOpen, onClose, onAppl
                                 <option value="sell">Bán hàng</option>
                                 <option value="viral">Lan tỏa</option>
                                 <option value="story">Kể chuyện</option>
+                                <option value="reviews">Đánh giá</option>
+                                <option value="promotion">Khuyến mãi</option>
+                                <option value="education">Kiến thức</option>
+                                <option value="inspiration">Cảm hứng</option>
+                                <option value="tips">Mẹo vặt</option>
+                                <option value="quotes">Trích dẫn</option>
+                                <option value="humor">Hài hước</option>
                             </select>
                         </div>
                         <div className="space-y-2">
@@ -128,12 +173,12 @@ const AiCaptionModal: React.FC<AiCaptionModalProps> = ({ isOpen, onClose, onAppl
                     </div>
 
                     <button
-                        onClick={handleGenerate}
-                        disabled={loading || !formData.userDescription.trim()}
-                        className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-bold text-sm shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                        onClick={handleGenerateWithAi}
+                        disabled={loading}
+                        className="w-full py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white rounded-lg font-bold text-sm shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98]"
                     >
-                        {loading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                        {loading ? 'Đang tạo...' : 'Tạo caption ngay'}
+                        {loading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                        {loading ? 'Đang xử lý...' : 'Tạo caption bằng AI'}
                     </button>
 
                     {/* Result Display */}
