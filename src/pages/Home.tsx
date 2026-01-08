@@ -150,9 +150,6 @@ export default function Home() {
         {/* Initial loading skeleton */}
         {loading && posts.length === 0 && (
           <>
-            <div className="text-center text-gray-500 mb-4">
-              Loading posts...
-            </div>
             <div className="space-y-6">
               {[1, 2].map(i => (
                 <div key={i} className="bg-white animate-pulse">

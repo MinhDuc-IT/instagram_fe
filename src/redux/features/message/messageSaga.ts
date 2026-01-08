@@ -66,15 +66,15 @@ function* handleFetchMessages(action: ReturnType<typeof fetchMessagesRequest>) {
 // Gửi tin nhắn
 function* handleSendMessage(action: ReturnType<typeof sendMessageRequest>) {
     try {
-        const { conversationId, recipientId, content } = action.payload;
+        const { conversationId, recipientId, content, messageType, mediaUrl } = action.payload;
         let res: Message;
 
         if (conversationId) {
             // Gửi tin nhắn trong conversation đã có
-            res = yield call(sendMessageApi, conversationId, content);
+            res = yield call(sendMessageApi, conversationId, content, messageType, mediaUrl);
         } else if (recipientId) {
             // Gửi tin nhắn đến user (tự động tạo conversation nếu chưa có)
-            res = yield call(sendMessageToUserApi, recipientId, content);
+            res = yield call(sendMessageToUserApi, recipientId, content, messageType, mediaUrl);
             // Sau khi gửi tin nhắn thành công, cập nhật selectedConversationId và fetch messages
             if (res.conversationId) {
                 yield put(selectConversation(res.conversationId));

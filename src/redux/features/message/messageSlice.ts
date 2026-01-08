@@ -12,6 +12,8 @@ export interface Conversation {
     lastMessage?: {
         id: string;
         content: string;
+        messageType?: string;
+        mediaUrl?: string;
         senderId: string;
         createdAt: string;
     };
@@ -25,6 +27,8 @@ export interface Message {
     conversationId: string;
     senderId: string;
     content: string;
+    messageType?: string;
+    mediaUrl?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -141,7 +145,13 @@ export const messageSlice = createSlice({
         // Gửi tin nhắn
         sendMessageRequest: (
             state,
-            _action: PayloadAction<{ conversationId?: string; recipientId?: string; content: string }>,
+            _action: PayloadAction<{
+                conversationId?: string;
+                recipientId?: string;
+                content: string;
+                messageType?: string;
+                mediaUrl?: string;
+            }>,
         ) => {
             state.loading = true;
             state.error = null;
@@ -192,7 +202,9 @@ export const messageSlice = createSlice({
                     ...conversation,
                     lastMessage: {
                         id: message.id,
-                        content: message.content,
+                        content: message.messageType === 'image' ? 'Đã gửi một ảnh' : message.content,
+                        messageType: message.messageType,
+                        mediaUrl: message.mediaUrl,
                         senderId: message.senderId,
                         createdAt: message.createdAt,
                     },
