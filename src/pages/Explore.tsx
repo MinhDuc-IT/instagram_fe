@@ -4,7 +4,7 @@ import { fetchHomeFeed, fetchMorePosts } from '../redux/features/post/postSlice'
 import PostModal from '../components/PostModal';
 import { RootState } from '../redux/store';
 import { Post } from '../types/post.type';
-import { Heart, Play, MessageCircle } from 'lucide-react';
+import { Heart, Play, MessageCircle, Copy } from 'lucide-react';
 
 export default function Explore() {
     const dispatch = useDispatch();
@@ -76,6 +76,7 @@ export default function Explore() {
                         const isVideo =
                             firstMedia?.type === 'video' || firstMedia?.format === 'mp4' || firstMedia?.duration;
                         const mediaUrl = firstMedia?.url || '/placeholder.svg';
+                        const hasMultiple = (post.media?.length ?? 0) > 1;
 
                         return (
                             <div
@@ -96,14 +97,21 @@ export default function Explore() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <img
-                                        src={mediaUrl}
-                                        alt="Explore post"
-                                        className="w-full h-auto object-cover"
-                                        onError={(e) => {
-                                            e.currentTarget.src = '/placeholder.svg';
-                                        }}
-                                    />
+                                    <div className="relative">
+                                        <img
+                                            src={mediaUrl}
+                                            alt="Explore post"
+                                            className="w-full h-auto object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.src = '/placeholder.svg';
+                                            }}
+                                        />
+                                        {hasMultiple && (
+                                            <div className="absolute top-2 right-2 flex items-center justify-center rounded bg-black/60 px-1.5 py-1">
+                                                <Copy className="w-4 h-4 text-white" />
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                                     <div className="flex items-center gap-2 text-white">
@@ -136,9 +144,7 @@ export default function Explore() {
             )}
 
             {/* End of posts message */}
-            {!loading && !hasMore && posts.length > 0 && (
-                <div className="text-center py-8 text-gray-500 text-sm">You've reached the end! 🎉</div>
-            )}
+            {!loading && !hasMore && posts.length > 0 && <div className="text-center py-8 text-gray-500 text-sm"></div>}
 
             {/* Post Modal */}
             {selectedPost && <PostModal post={selectedPost} onClose={() => setSelectedPost(null)} />}
