@@ -7,6 +7,7 @@ import { Info, Phone, Video, MoreHorizontal, Smile, Image, Heart, ChevronLeft } 
 import { fetchMessagesRequest, sendMessageRequest, clearAllTypingUsers } from '../redux/features/message/messageSlice';
 import { getSocket } from '../utils/socket';
 import EmojiPicker from './Common/EmojiPicker';
+import uploadService from '../service/uploadService';
 
 export default function MessageBox({ chat, onBack }) {
     const dispatch = useDispatch();
@@ -15,8 +16,11 @@ export default function MessageBox({ chat, onBack }) {
         useSelector((state) => state.message);
     const { user } = useSelector((state) => state.auth);
     const [message, setMessage] = useState('');
+    const [uploadingImage, setUploadingImage] = useState(false);
+
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+    const fileInputRef = useRef(null);
     const previousScrollHeightRef = useRef(0);
     const isLoadingMoreRef = useRef(false);
     const previousConversationIdRef = useRef(null);
@@ -31,6 +35,49 @@ export default function MessageBox({ chat, onBack }) {
         },
         [user],
     );
+
+    // Handle image selection and upload
+    const handleImageClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Reset input
+        e.target.value = '';
+
+        try {
+            setUploadingImage(true);
+            const response = await uploadService.uploadImage(file);
+            const mediaUrl = response.url || response.data?.url || response.secure_url;
+
+            if (mediaUrl) {
+                // Send image message
+                if (selectedConversationId) {
+                    dispatch(sendMessageRequest({
+                        conversationId: selectedConversationId,
+                        content: '',
+                        messageType: 'image',
+                        mediaUrl
+                    }));
+                } else if (chat?.userId) {
+                    dispatch(sendMessageRequest({
+                        recipientId: chat.userId,
+                        content: '',
+                        messageType: 'image',
+                        mediaUrl
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error('Upload image failed:', error);
+            alert('Gửi ảnh thất bại, vui lòng thử lại.');
+        } finally {
+            setUploadingImage(false);
+        }
+    };
 
     // Hàm cuộn xuống cuối
     const scrollToBottom = useCallback((instant = false) => {
@@ -325,14 +372,26 @@ export default function MessageBox({ chat, onBack }) {
                             )}
                             <div className="flex flex-col gap-1 min-w-0">
                                 <div
-                                    className={`px-3.5 py-2 text-sm break-words relative transition-all duration-200 ${
-                                        fromMe
-                                            ? 'bg-ig-primary text-white rounded-[18px] rounded-br-[4px]'
-                                            : 'bg-gray-100 dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
-                                    }`}
-                                    style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '100%' }}
+                                    className={`px-3.5 py-2 text-sm break-words relative transition-all duration-200 ${msg.messageType === 'image'
+                                            ? 'p-1 bg-transparent border-none'
+                                            : fromMe
+                                                ? 'bg-ig-primary text-white rounded-[18px] rounded-br-[4px]'
+                                                : 'bg-gray-100 dark:bg-zinc-800 text-black dark:text-white rounded-[18px] rounded-bl-[4px]'
+                                        }`}
+                                    style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', maxWidth: '300px' }}
                                 >
-                                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                                    {msg.messageType === 'image' ? (
+                                        <div className="rounded-[18px] overflow-hidden border border-gray-100 dark:border-zinc-800">
+                                            <img
+                                                src={msg.mediaUrl}
+                                                alt="Message"
+                                                className="max-w-full h-auto object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                                onClick={() => window.open(msg.mediaUrl, '_blank')}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                                    )}
                                 </div>
                                 {isLastInGroup && (
                                     <span
@@ -357,6 +416,16 @@ export default function MessageBox({ chat, onBack }) {
                             <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
                             <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
                             <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" />
+                        </div>
+                    </div>
+                )}
+                {uploadingImage && (
+                    <div className="flex justify-end pr-4">
+                        <div className="w-48 h-32 bg-gray-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center animate-pulse">
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="w-6 h-6 border-2 border-ig-primary border-t-transparent rounded-full animate-spin" />
+                                <span className="text-[10px] text-gray-400">Đang gửi ảnh...</span>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -396,7 +465,12 @@ export default function MessageBox({ chat, onBack }) {
                         </button>
                     ) : (
                         <div className="flex items-center gap-3">
-                            <button type="button" className="hover:opacity-70 transition-opacity">
+                            <button
+                                type="button"
+                                className={`hover:opacity-70 transition-opacity ${uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={handleImageClick}
+                                disabled={uploadingImage}
+                            >
                                 <Image size={24} />
                             </button>
                             <button type="button" className="hover:opacity-70 transition-opacity">
@@ -404,6 +478,13 @@ export default function MessageBox({ chat, onBack }) {
                             </button>
                         </div>
                     )}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                    />
                 </form>
             </div>
         </div>

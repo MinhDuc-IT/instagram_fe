@@ -21,9 +21,16 @@ export const getMessagesApi = (
 };
 
 // Send a message
-export const sendMessageApi = (conversationId: string, content: string): Promise<AxiosResponse<Message>> => {
+export const sendMessageApi = (
+    conversationId: string,
+    content: string,
+    messageType: string = 'text',
+    mediaUrl?: string,
+): Promise<AxiosResponse<Message>> => {
     return axios.post<Message>(`/messages/conversations/${conversationId}/messages`, {
         content,
+        messageType,
+        mediaUrl,
     });
 };
 
@@ -35,10 +42,17 @@ export const getOrCreateConversationApi = (participantId: string): Promise<Axios
 };
 
 // Send a message to a user (automatically creates conversation if not exists)
-export const sendMessageToUserApi = (recipientId: string, content: string): Promise<AxiosResponse<Message>> => {
+export const sendMessageToUserApi = (
+    recipientId: string,
+    content: string,
+    messageType: string = 'text',
+    mediaUrl?: string,
+): Promise<AxiosResponse<Message>> => {
     return axios.post<Message>('/messages/send', {
         recipientId,
         content,
+        messageType,
+        mediaUrl,
     });
 };
 

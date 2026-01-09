@@ -224,9 +224,9 @@ export default function Messages() {
                             <p className="text-gray-500 text-sm">
                                 Send private photos and messages to a friend or group.
                             </p>
-                            <button className="mt-6 bg-ig-primary text-white px-4 py-1.5 rounded-lg font-semibold text-sm hover:opacity-90 transition">
+                            {/* <button className="mt-6 bg-ig-primary text-white px-4 py-1.5 rounded-lg font-semibold text-sm hover:opacity-90 transition">
                                 Send message
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 )}

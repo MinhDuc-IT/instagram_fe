@@ -3,7 +3,7 @@ import axios from '../utils/axiosCustomize';
 export interface GenerateCaptionRequest {
     userDescription: string;
     language?: 'vi' | 'en';
-    intent?: 'branding' | 'sell' | 'viral' | 'story';
+    intent: 'branding' | 'sell' | 'viral' | 'story' | 'reviews' | 'promotion' | 'education' | 'inspiration' | 'tips' | 'quotes' | 'humor';
     tone?: 'natural' | 'genz' | 'professional' | 'emotional';
     brandStyle?: string;
     maxVariants?: number;
@@ -19,9 +19,12 @@ export interface GenerateCaptionResponse {
 }
 
 export const AiCaptionService = {
-    async generate(data: GenerateCaptionRequest): Promise<GenerateCaptionResponse> {
+    async generate(data: GenerateCaptionRequest | FormData): Promise<GenerateCaptionResponse> {
         try {
-            const response = await axios.post('/captions/generate', data);
+            const isFormData = data instanceof FormData;
+            const response = await axios.post('/captions/generate', data, {
+                headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' }
+            });
             return response as any as GenerateCaptionResponse;
         } catch (error) {
             console.error('Error in AiCaptionService.generate:', error);

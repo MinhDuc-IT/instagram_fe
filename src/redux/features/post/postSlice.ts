@@ -9,6 +9,7 @@ interface PostState {
   hasMore: boolean
   currentPage: number
   totalPages: number
+  isModalVideoPlaying: boolean
 }
 
 const initialState: PostState = {
@@ -19,6 +20,7 @@ const initialState: PostState = {
   hasMore: true,
   currentPage: 1,
   totalPages: 1,
+  isModalVideoPlaying: false,
 }
 
 const postSlice = createSlice({
@@ -110,6 +112,9 @@ const postSlice = createSlice({
     createPostFailure(state, _action: PayloadAction<string>) {
       state.loading = false;
     },
+    setModalVideoPlaying(state, action: PayloadAction<boolean>) {
+      state.isModalVideoPlaying = action.payload;
+    },
   },
 })
 
@@ -126,6 +131,7 @@ export const {
   createPostRequest,
   createPostSuccess,
   createPostFailure,
+  setModalVideoPlaying,
 } = postSlice.actions
 
 export default postSlice.reducer

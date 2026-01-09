@@ -25,6 +25,7 @@ export default function ReelCard({
     const [isLiked, setIsLiked] = useState(reel.isLiked);
     const [isSaved, setIsSaved] = useState(reel.isSaved);
     const [showComments, setShowComments] = useState(false);
+    const [showShareMenu, setShowShareMenu] = useState(false);
     const avatarUrl = useSelector((state: RootState) => state?.auth?.user?.avatar);
     const userId = useSelector((state: RootState) => state?.auth?.user?.id);
     const reelData = useSelector((state: RootState) => state?.reels?.list?.find((r: any) => r.id === reel.id));
@@ -170,9 +171,34 @@ export default function ReelCard({
                             avatarUrl={avatarUrl}
                             handleClickComment={handleClickComment}
                         />
-                        <button className="flex flex-col items-center">
-                            <Send className="w-7 h-7 text-black dark:text-white" />
-                        </button>
+                        <div className="relative flex flex-col items-center justify-center">
+                            <button
+                                aria-label="Share"
+                                className="flex flex-col items-center justify-center w-7 h-7"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowShareMenu(!showShareMenu);
+                                }}
+                            >
+                                <Send className="w-7 h-7 text-black dark:text-white" />
+                            </button>
+                            {showShareMenu && (
+                                <div className="absolute bottom-full right-full mr-2 mb-[-30px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-50 w-48 overflow-hidden">
+                                    <button
+                                        className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition dark:text-white"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const reelUrl = `${window.location.origin}/reels`; // Using reels page as fallback
+                                            navigator.clipboard.writeText(reelUrl);
+                                            setShowShareMenu(false);
+                                            alert('Link copied!');
+                                        }}
+                                    >
+                                        Copy link
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         <button onClick={() => handleSave()} className="flex flex-col items-center">
                             <Bookmark
                                 className="w-7 h-7 text-black dark:text-white"
