@@ -11,6 +11,7 @@ import commentReducer from './features/comment/commentSlice';
 import notificationReducer from './features/notification/notificationSlice';
 import postReducer from './features/post/postSlice';
 import storyReducer from './features/story/storySlice';
+import reelsReducer from './features/reels/reelsSlice';
 
 const rootReducer = combineReducers({
     users: usersReducer,
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
     notification: notificationReducer,
     post: postReducer,
     story: storyReducer,
+    reels: reelsReducer,
 });
 
 const persistConfig: PersistConfig<ReturnType<typeof rootReducer>> = {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Heart, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, Play } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 
 import { RootState } from '@/src/redux/store';
 import { PostService } from '../../service/postService';
@@ -8,6 +8,9 @@ import { DataUtil } from '../../utils/DataUtil';
 import Comment from '../Reels/Comment';
 import { usePostComments } from '../../hooks/usePostComments';
 import 'tippy.js/dist/tippy.css';
+import { FollowService } from '../../service/followService';
+import { toggleFollowInPost } from '../../redux/features/post/postSlice';
+import { toggleFollowOnReels } from '../../redux/features/reels/reelsSlice';
 
 export default function ReelCard({
     reel,
@@ -18,24 +21,29 @@ export default function ReelCard({
     showPlayIcon,
     showPauseIcon,
 }: any) {
+    const dispatch = useDispatch();
     const [isLiked, setIsLiked] = useState(reel.isLiked);
     const [isSaved, setIsSaved] = useState(reel.isSaved);
     const [showComments, setShowComments] = useState(false);
     const [showShareMenu, setShowShareMenu] = useState(false);
     const avatarUrl = useSelector((state: RootState) => state?.auth?.user?.avatar);
-    const [showFullCaption, setShowFullCaption] = useState(false)
+    const userId = useSelector((state: RootState) => state?.auth?.user?.id);
+    const reelData = useSelector((state: RootState) => state?.reels?.list?.find((r: any) => r.id === reel.id));
+    const [showFullCaption, setShowFullCaption] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(reelData?.User?.isFollowing || false);
 
-    const captionLimit = 100
-    const needsTruncate = (reel.caption?.length ?? 0) > captionLimit
+    const captionLimit = 100;
+    const needsTruncate = (reel.caption?.length ?? 0) > captionLimit;
 
     useEffect(() => {
         setShowComments(false);
-    }, [reel.id]);
+        setIsFollowing(reelData?.User?.isFollowing || false);
+    }, [reel.id, reelData?.User?.isFollowing]);
 
     const toggleCaption = (e: React.MouseEvent) => {
-        e.stopPropagation()
-        setShowFullCaption(!showFullCaption)
-    }
+        e.stopPropagation();
+        setShowFullCaption(!showFullCaption);
+    };
     const handleLike = async (reel: any) => {
         await PostService.like(reel.id);
         reel.likesCount = isLiked ? reel.likesCount - 1 : reel.likesCount + 1;
@@ -49,8 +57,14 @@ export default function ReelCard({
         setShowComments((prev) => !prev);
     };
 
-    const handleClickFollow = () => {
-        console.log('Follow button clicked for user:', reel.username);
+    const handleClickFollow = async (userId: string) => {
+        console.log('Follow button clicked for user:', userId);
+        await FollowService.followUser(Number(userId));
+        dispatch(toggleFollowOnReels(Number(reel?.User?.id)));
+    };
+
+    const handleViewProfile = () => {
+        window.location.href = `/profile/${reel?.User?.id}`;
     };
 
     const handleWheel = (e: React.WheelEvent) => {
@@ -101,18 +115,22 @@ export default function ReelCard({
                     {/* Bottom Info */}
                     <div className="absolute z-10 bottom-20 left-4 right-20">
                         <div className="flex items-center gap-2 mb-3">
-                            <img
-                                src={reel?.User?.avatar || '/placeholder.svg'}
-                                alt={reel?.User?.userName}
-                                className="w-8 h-8 rounded-full object-cover"
-                            />
-                            <span className="text-white font-semibold">{reel?.User?.userName || 'No-Name'}</span>
-                            <button
-                                onClick={() => handleClickFollow()}
-                                className="text-white border border-white rounded-[6px] px-3 py-1 text-sm font-semibold"
-                            >
-                                Follow
-                            </button>
+                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleViewProfile()}>
+                                <img
+                                    src={reel?.User?.avatar || '/placeholder.svg'}
+                                    alt={reel?.User?.userName}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                />
+                                <span className="text-white font-semibold">{reel?.User?.userName || 'No-Name'}</span>
+                            </div>
+                            {userId?.toString() !== reel?.User?.id?.toString() && (
+                                <button
+                                    onClick={() => handleClickFollow(reel?.User?.id)}
+                                    className="text-white border border-white rounded-[6px] px-3 py-1 text-sm font-semibold"
+                                >
+                                    {isFollowing ? 'Following' : 'Follow'}
+                                </button>
+                            )}
                         </div>
                         {/* <p className="text-white text-sm">{reel?.caption}</p> */}
                         {reel?.caption && (
@@ -123,14 +141,10 @@ export default function ReelCard({
                                 <span className="text-white dark:text-white">
                                     {needsTruncate && !showFullCaption
                                         ? reel?.caption.slice(0, captionLimit) + '...'
-                                        : reel?.caption
-                                    }
+                                        : reel?.caption}
                                 </span>
                                 {needsTruncate && (
-                                    <button
-                                        onClick={toggleCaption}
-                                        className="text-blue-500 ml-1 hover:text-blue-700"
-                                    >
+                                    <button onClick={toggleCaption} className="text-blue-500 ml-1 hover:text-blue-700">
                                         {showFullCaption ? ' thu gọn' : ' xem thêm'}
                                     </button>
                                 )}
@@ -186,7 +200,10 @@ export default function ReelCard({
                             )}
                         </div>
                         <button onClick={() => handleSave()} className="flex flex-col items-center">
-                            <Bookmark className="w-7 h-7 text-black dark:text-white" fill={isSaved ? 'black' : 'none'} />
+                            <Bookmark
+                                className="w-7 h-7 text-black dark:text-white"
+                                fill={isSaved ? 'black' : 'none'}
+                            />
                         </button>
                         <button className="text-black dark:text-white p-2">
                             <MoreHorizontal className="w-6 h-6" />
