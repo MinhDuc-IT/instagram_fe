@@ -7,6 +7,7 @@ import { Post } from '../types/post.type';
 import { PostService } from '../service/postService';
 import { toggleLikePost, toggleSavePost, addCommentToPost } from '../redux/features/user/userSlice';
 import { createCommentRequest, addCommentFromSocket } from '../redux/features/comment/commentSlice';
+import { setModalVideoPlaying } from '../redux/features/post/postSlice';
 import { CommentService } from '../service/commentService';
 import PostEditModal from './PostEditModal';
 import { RootState, AppDispatch } from '../redux/store';
@@ -76,6 +77,7 @@ export default function PostModal({ post, onClose, scrollToCommentId, onShareToS
 
         return () => {
             mountedRef.current = false;
+            dispatch(setModalVideoPlaying(false));
             clearTimeout(timer);
         };
     }, [post]);
@@ -284,6 +286,8 @@ export default function PostModal({ post, onClose, scrollToCommentId, onShareToS
                                         src={p.media[currentIndex].url}
                                         controls
                                         className="max-h-full max-w-full object-contain"
+                                        onPlay={() => dispatch(setModalVideoPlaying(true))}
+                                        onPause={() => dispatch(setModalVideoPlaying(false))}
                                     />
                                 ) : (
                                     <img

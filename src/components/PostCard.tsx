@@ -1,7 +1,7 @@
 import { DataUtil } from "../utils/DataUtil"
 import { Heart, ChevronLeft, ChevronRight, MoreHorizontal, MessageCircle, Send, Bookmark } from "lucide-react"
 import { useDispatch, useSelector } from "react-redux"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { toggleLikeOptimistic, toggleFollowInPost } from "../redux/features/post/postSlice"
 import { Post } from "../types/post.type"
 import { toggleSavePost, toggleFollow } from "../redux/features/user/userSlice"
@@ -24,6 +24,8 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
   const [showFullCaption, setShowFullCaption] = useState(false)
   const [isSaved, setIsSaved] = useState(post.isSaved ?? false)
   const [showShareMenu, setShowShareMenu] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const isModalVideoPlaying = useSelector((state: RootState) => state.post.isModalVideoPlaying)
 
   const isFollowing = post.isFollowing ?? false
 
@@ -84,6 +86,12 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
     e.stopPropagation()
     setShowFullCaption(!showFullCaption)
   }
+
+  useEffect(() => {
+    if (isModalVideoPlaying && videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause()
+    }
+  }, [isModalVideoPlaying])
 
   const handleFollow = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -161,6 +169,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
           <>
             {post.media[currentIndex].type === "video" ? (
               <video
+                ref={videoRef}
                 src={post.media[currentIndex].url}
                 controls
                 className="w-full h-full object-cover"
@@ -176,6 +185,7 @@ export default function PostCard({ post, onPostClick }: PostCardProps) {
                 }}
               />
             )}
+            )
 
             {/* Navigation Buttons */}
             {isMultiple && currentIndex > 0 && (
